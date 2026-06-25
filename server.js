@@ -77,7 +77,7 @@ app.post('/api/signup', async (req, res) => {
     res.json({ token, user: { id: userId, full_name, email, role } });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Internal Server Error' });
+    res.status(500).json({ error: error.message || 'Internal Server Error', stack: error.stack });
   }
 });
 
@@ -95,7 +95,7 @@ app.post('/api/login', async (req, res) => {
     res.json({ token, user: { id: user.id, full_name: user.full_name, email: user.email, role: user.role } });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Internal Server Error' });
+    res.status(500).json({ error: error.message || 'Internal Server Error', stack: error.stack });
   }
 });
 
