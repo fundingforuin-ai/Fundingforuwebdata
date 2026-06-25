@@ -1,0 +1,5 @@
+node_modules/
+.env
+*.log
+.DS_Store
+trader_data.db*

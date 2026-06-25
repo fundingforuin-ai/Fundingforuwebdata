@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Help Center — Fundings4U</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#050510;font-family:'Inter',sans-serif;color:#e3e0f3;overflow-x:hidden}
+.bg-layer{position:fixed;inset:0;z-index:0;pointer-events:none}
+.bg-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.025) 1px,transparent 1px);background-size:40px 40px;animation:driftGrid 15s linear infinite}
+@keyframes driftGrid{0%{background-position:0 0}100%{background-position:40px 40px}}
+.auth-wrapper{position:relative;z-index:10;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px; flex-direction:column;}
+.logo{text-align:center;margin-bottom:32px}
+.logo a{font-family:'Hanken Grotesk',sans-serif;font-size:26px;font-weight:800;letter-spacing:-0.04em;color:#e3e0f3;text-decoration:none}
+.logo a span{color:#d2bbff}
+.content-card{width:100%;max-width:800px;background:rgba(14,12,30,0.85);border:1px solid rgba(124,58,237,0.2);border-radius:24px;padding:44px 40px;backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);box-shadow:0 32px 80px rgba(0,0,0,0.5);text-align:center;}
+h1 {margin-bottom: 20px;}
+p {color: #635c79; line-height: 1.6;}
+a.back {display: inline-block; margin-top: 30px; color: #d2bbff; text-decoration: none;}
+</style>
+</head>
+<body>
+<div class="bg-layer"><div class="bg-grid"></div></div>
+<div class="auth-wrapper">
+  <div class="logo"><a href="/">Fundings<span>4U</span></a></div>
+  <div class="content-card">
+    <h1>Help Center</h1>
+    <p>This page is currently under construction. Check back later for updates!</p>
+    <a class="back" href="/">&larr; Back to Home</a>
+  </div>
+</div>
+</body>
+</html>

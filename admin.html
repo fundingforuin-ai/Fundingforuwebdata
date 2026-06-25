@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Admin Panel — Fundings4U</title>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#060614;font-family:'Inter',sans-serif;color:#e3e0f3}
+:root{--sb:240px;--topbar:60px}
+
+.sidebar{position:fixed;left:0;top:0;width:var(--sb);height:100vh;background:rgba(10,9,24,0.97);border-right:1px solid rgba(239,68,68,0.12);display:flex;flex-direction:column;z-index:100}
+.sb-logo{padding:20px 22px 16px;border-bottom:1px solid rgba(255,255,255,0.04)}
+.sb-logo a{font-family:'Hanken Grotesk',sans-serif;font-size:22px;font-weight:800;letter-spacing:-0.04em;color:#e3e0f3;text-decoration:none}
+.sb-logo a span{color:#f87171}
+.sb-badge{display:inline-block;background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.2);border-radius:4px;padding:2px 8px;font-size:10px;font-weight:700;color:#f87171;margin-top:5px}
+.sb-nav{flex:1;padding:16px 12px;overflow-y:auto}
+.sb-section{font-size:10px;font-weight:600;color:#3d3657;text-transform:uppercase;letter-spacing:.1em;padding:10px 10px 6px}
+.sb-link{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;font-size:13.5px;font-weight:500;color:#7a718f;text-decoration:none;transition:all .2s;margin-bottom:2px;cursor:pointer}
+.sb-link:hover,.sb-link.active{background:rgba(239,68,68,0.07);color:#fca5a5}
+.sb-link .icon{font-size:16px;width:22px;text-align:center}
+
+.topbar{position:fixed;top:0;left:var(--sb);right:0;height:var(--topbar);background:rgba(6,6,20,0.95);border-bottom:1px solid rgba(255,255,255,0.04);display:flex;align-items:center;justify-content:space-between;padding:0 28px;z-index:99;backdrop-filter:blur(12px)}
+.page-title{font-family:'Hanken Grotesk',sans-serif;font-size:18px;font-weight:700}
+.logout-btn{background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:8px;padding:7px 14px;font-size:12px;color:#f87171;cursor:pointer;transition:all .2s;font-family:'Inter',sans-serif}
+.logout-btn:hover{background:rgba(239,68,68,0.15)}
+
+.main{margin-left:var(--sb);padding-top:var(--topbar)}
+.content{padding:28px}
+
+/* Stats row */
+.admin-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:26px}
+.stat-card{background:rgba(14,12,30,0.8);border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:20px}
+.stat-label{font-size:11px;color:#635c79;text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px}
+.stat-val{font-family:'Hanken Grotesk',sans-serif;font-size:28px;font-weight:800;color:#e3e0f3}
+
+/* Section card */
+.section-card{background:rgba(14,12,30,0.8);border:1px solid rgba(255,255,255,0.06);border-radius:16px;padding:24px;margin-bottom:22px}
+.section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.section-title{font-family:'Hanken Grotesk',sans-serif;font-size:16px;font-weight:700}
+
+/* Table */
+table{width:100%;border-collapse:collapse}
+th{font-size:11px;font-weight:600;color:#635c79;text-transform:uppercase;letter-spacing:.07em;text-align:left;padding:0 12px 12px;border-bottom:1px solid rgba(255,255,255,0.05)}
+td{font-size:13px;color:#c4b9e0;padding:13px 12px;border-bottom:1px solid rgba(255,255,255,0.03)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(124,58,237,0.03)}
+.mono{font-family:'JetBrains Mono',monospace;font-size:12px;color:#a78bfa}
+.status-pill{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
+.status-pill.active{background:rgba(16,185,129,0.1);color:#34d399}
+.status-pill.pending{background:rgba(234,179,8,0.1);color:#fbbf24}
+.status-pill.none{background:rgba(255,255,255,0.05);color:#635c79}
+
+/* Action button */
+.btn-assign{background:linear-gradient(135deg,#7c3aed,#5b21b6);color:#fff;font-size:11px;font-weight:600;padding:7px 14px;border:none;border-radius:7px;cursor:pointer;transition:all .2s}
+.btn-assign:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(124,58,237,.35)}
+
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:999;display:none;align-items:center;justify-content:center;backdrop-filter:blur(6px)}
+.modal-overlay.show{display:flex;animation:fadeIn .2s ease}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.modal{background:#0e0c1e;border:1px solid rgba(124,58,237,0.25);border-radius:20px;padding:32px;width:100%;max-width:480px;box-shadow:0 32px 80px rgba(0,0,0,0.6)}
+.modal-title{font-family:'Hanken Grotesk',sans-serif;font-size:19px;font-weight:700;margin-bottom:6px}
+.modal-sub{font-size:13px;color:#635c79;margin-bottom:24px}
+.form-group{margin-bottom:16px}
+.form-group label{display:block;font-size:11px;font-weight:600;color:#958da1;text-transform:uppercase;letter-spacing:.07em;margin-bottom:7px}
+.form-group input,.form-group select{width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:12px 16px;font-size:14px;color:#e3e0f3;outline:none;transition:border-color .2s;font-family:'Inter',sans-serif}
+.form-group input:focus,.form-group select:focus{border-color:rgba(124,58,237,0.5);box-shadow:0 0 0 3px rgba(124,58,237,.1)}
+.form-group select option{background:#0e0c1e}
+.modal-btns{display:flex;gap:10px;margin-top:8px}
+.btn-save{flex:1;background:linear-gradient(135deg,#7c3aed,#5b21b6);color:#fff;font-size:13px;font-weight:600;padding:13px;border:none;border-radius:10px;cursor:pointer;transition:all .2s}
+.btn-save:hover{transform:translateY(-1px);box-shadow:0 4px 18px rgba(124,58,237,.4)}
+.btn-cancel{flex:1;background:rgba(255,255,255,0.04);color:#958da1;font-size:13px;font-weight:500;padding:13px;border:1px solid rgba(255,255,255,0.07);border-radius:10px;cursor:pointer}
+.btn-cancel:hover{color:#e3e0f3}
+.toast{position:fixed;bottom:24px;right:24px;background:#1a1730;border:1px solid rgba(16,185,129,.3);border-radius:10px;padding:12px 20px;font-size:13px;color:#34d399;z-index:9999;transform:translateY(20px);opacity:0;transition:all .3s}
+.toast.show{transform:translateY(0);opacity:1}
+
+@media(max-width:768px){
+  :root{--sb:0px}
+  .sidebar{display:none}
+  .topbar{left:0}
+  .content{padding:16px}
+  .admin-stats{grid-template-columns:repeat(2,1fr)}
+  table{display:block;overflow-x:auto}
+}
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="sb-logo">
+    <a href="/">Fundings<span>4U</span></a>
+    <div><div class="sb-badge">ADMIN</div></div>
+  </div>
+  <nav class="sb-nav">
+    <div class="sb-section">Management</div>
+    <a class="sb-link active"><span class="icon">👥</span> All Traders</a>
+    <a class="sb-link"><span class="icon">📊</span> Analytics</a>
+    <a class="sb-link"><span class="icon">💸</span> Payouts</a>
+    <div class="sb-section" style="margin-top:12px">Bot</div>
+    <a class="sb-link"><span class="icon">🤖</span> MT5 Bot Status</a>
+    <a class="sb-link"><span class="icon">📡</span> Data Logs</a>
+    <div class="sb-section" style="margin-top:12px">Links</div>
+    <a class="sb-link" href="/dashboard"><span class="icon">📈</span> Trader Dashboard</a>
+    <a class="sb-link" href="/"><span class="icon">🌐</span> Main Website</a>
+  </nav>
+</aside>
+
+<!-- Topbar -->
+<header class="topbar">
+  <div class="page-title">⚡ Admin Panel</div>
+  <button class="logout-btn" onclick="logout()">Sign Out</button>
+</header>
+
+<!-- Main -->
+<main class="main">
+  <div class="content">
+    <div class="admin-stats" id="adminStats">
+      <div class="stat-card"><div class="stat-label">Total Traders</div><div class="stat-val" id="statTotal">—</div></div>
+      <div class="stat-card"><div class="stat-label">Active Accounts</div><div class="stat-val" id="statActive">—</div></div>
+      <div class="stat-card"><div class="stat-label">Pending Setup</div><div class="stat-val" id="statPending">—</div></div>
+      <div class="stat-card"><div class="stat-label">No Account</div><div class="stat-val" id="statNone">—</div></div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-head">
+        <div class="section-title">Registered Traders</div>
+        <div style="font-size:12px;color:#635c79" id="lastRefresh">Loading...</div>
+      </div>
+      <table>
+        <thead><tr>
+          <th>Trader</th><th>Email</th><th>MT5 Login</th><th>Server</th><th>Account Size</th><th>Challenge</th><th>Status</th><th>Action</th>
+        </tr></thead>
+        <tbody id="usersTable"><tr><td colspan="8" style="text-align:center;color:#635c79;padding:30px">Loading traders...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<!-- Assign Modal -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-title">Assign MT5 Account</div>
+    <div class="modal-sub" id="modalSub">Assigning account to trader</div>
+    <input type="hidden" id="modalUserId"/>
+    <div class="form-group"><label>MT5 Login Number</label><input type="text" id="mt5Login" placeholder="e.g. 12345678"/></div>
+    <div class="form-group"><label>MT5 Password (Investor/Master)</label><input type="password" id="mt5Password" placeholder="Leave blank to keep existing password"/></div>
+    <div class="form-group"><label>MT5 Server</label><input type="text" id="mt5Server" placeholder="e.g. ICMarkets-Live02"/></div>
+    <div class="form-group"><label>Account Size ($)</label><input type="number" id="accountSize" placeholder="e.g. 100000"/></div>
+    <div class="form-group"><label>Challenge Type</label>
+      <select id="challengeType">
+        <option value="2step">2 Step Evaluation</option>
+        <option value="instant">Instant Funding</option>
+        <option value="unlimited">Unlimited Try</option>
+      </select>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-save" onclick="saveAccount()">Assign Account →</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const token = localStorage.getItem('f4u_token');
+const user = JSON.parse(localStorage.getItem('f4u_user') || '{}');
+if (!token || user.role !== 'admin') window.location.replace('/login');
+
+window.addEventListener('pageshow', function(event) {
+  if (event.persisted || performance.getEntriesByType("navigation")[0].type === "back_forward") {
+    if (!localStorage.getItem('f4u_token')) window.location.replace('/login');
+  }
+});
+
+function logout() { localStorage.clear(); window.location.replace('/login'); }
+
+function showToast(msg, ok = true) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.borderColor = ok ? 'rgba(16,185,129,.3)' : 'rgba(239,68,68,.3)';
+  t.style.color = ok ? '#34d399' : '#f87171';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+async function loadUsers() {
+  try {
+    const res = await fetch('/api/admin/users', { headers: { Authorization: 'Bearer ' + token } });
+    if (res.status === 401 || res.status === 403) { localStorage.clear(); window.location.href = '/login'; return; }
+    const users = await res.json();
+    document.getElementById('lastRefresh').textContent = 'Updated: ' + new Date().toLocaleTimeString();
+
+    // Stats
+    const active = users.filter(u => u.status === 'active').length;
+    const pending = users.filter(u => u.status === 'pending').length;
+    const none = users.filter(u => !u.account_id).length;
+    document.getElementById('statTotal').textContent = users.filter(u => u.role !== 'admin').length;
+    document.getElementById('statActive').textContent = active;
+    document.getElementById('statPending').textContent = pending;
+    document.getElementById('statNone').textContent = none;
+
+    // Table
+    const tbody = document.getElementById('usersTable');
+    const traders = users.filter(u => u.role !== 'admin');
+    if (!traders.length) { tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#635c79;padding:30px">No traders registered yet.</td></tr>'; return; }
+
+    tbody.innerHTML = traders.map(u => `
+      <tr>
+        <td><strong style="color:#e3e0f3">${u.full_name}</strong><br/><span style="font-size:11px;color:#635c79">#${u.id}</span></td>
+        <td style="color:#958da1">${u.email}</td>
+        <td class="mono">${u.mt5_login || '—'}</td>
+        <td style="font-size:12px;color:#7a6fa0">${u.mt5_server || '—'}</td>
+        <td>${u.account_size ? '$' + Number(u.account_size).toLocaleString() : '—'}</td>
+        <td style="font-size:12px">${{'2step':'2 Step', 'instant':'Instant', 'unlimited':'Unlimited'}[u.challenge_type] || '—'}</td>
+        <td><span class="status-pill ${u.status || 'none'}">${u.status || 'Not Assigned'}</span></td>
+        <td><button class="btn-assign" onclick="openModal(${u.id}, '${u.full_name}', '${u.mt5_login || ''}', '${u.mt5_server || ''}', ${u.account_size || 0}, '${u.challenge_type || '2step'}')">Assign / Edit</button></td>
+      </tr>
+    `).join('');
+  } catch(e) { console.error(e); }
+}
+
+function openModal(userId, name, login, server, size, type) {
+  document.getElementById('modalUserId').value = userId;
+  document.getElementById('modalSub').textContent = 'Assigning account to: ' + name;
+  document.getElementById('mt5Login').value = login;
+  document.getElementById('mt5Password').value = '';
+  document.getElementById('mt5Server').value = server;
+  document.getElementById('accountSize').value = size || '';
+  document.getElementById('challengeType').value = type || '2step';
+  document.getElementById('modalOverlay').classList.add('show');
+}
+function closeModal() { document.getElementById('modalOverlay').classList.remove('show'); }
+
+async function saveAccount() {
+  const user_id = document.getElementById('modalUserId').value;
+  const mt5_login = document.getElementById('mt5Login').value.trim();
+  const mt5_password = document.getElementById('mt5Password').value.trim();
+  const mt5_server = document.getElementById('mt5Server').value.trim();
+  const account_size = parseFloat(document.getElementById('accountSize').value) || 0;
+  const challenge_type = document.getElementById('challengeType').value;
+  try {
+    const res = await fetch('/api/admin/assign-account', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+      body: JSON.stringify({ user_id: parseInt(user_id), mt5_login, mt5_password, mt5_server, account_size, challenge_type })
+    });
+    if (!res.ok) throw new Error('Failed');
+    closeModal();
+    showToast('Account assigned successfully!');
+    loadUsers();
+  } catch(e) { showToast('Error saving account', false); }
+}
+
+loadUsers();
+setInterval(loadUsers, 30000);
+</script>
+</body>
+</html>

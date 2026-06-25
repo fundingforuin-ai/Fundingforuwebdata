@@ -1,0 +1,1889 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>FundingForU - Elite Prop Trading Firm | Get Funded & Trade Beyond Limits</title>
+<meta name="description" content="FundingForU is a next-gen prop trading firm offering instant funded accounts, no evaluation phases, and up to 95% profit split. Start your challenge today."/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;600&family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        colors: {
+          "background": "#050510",
+          "on-background": "#e3e0f3",
+          "on-primary": "#3f008e",
+          "on-surface": "#e3e0f3",
+          "surface-tint": "#d2bbff",
+          "on-primary-container": "#ede0ff",
+          "inverse-on-surface": "#2f2f3d",
+          "surface-container-highest": "#343341",
+          "on-surface-variant": "#ccc3d8",
+          "secondary-container": "#6f00be",
+          "tertiary": "#ddb8ff",
+          "error-container": "#93000a",
+          "on-error": "#690005",
+          "surface-dim": "#12121f",
+          "primary-container": "#7c3aed",
+          "surface-bright": "#383846",
+          "surface-container-lowest": "#0d0d19",
+          "primary-fixed": "#eaddff",
+          "inverse-primary": "#732ee4",
+          "primary": "#d2bbff",
+          "outline": "#958da1",
+          "inverse-surface": "#e3e0f3",
+          "secondary": "#ddb7ff",
+          "error": "#ffb4ab",
+          "surface-container-high": "#292936",
+          "surface-container-low": "#1a1a27",
+          "surface-variant": "#343341",
+          "surface": "#12121f",
+          "outline-variant": "#4a4455",
+          "surface-container": "#1f1e2b",
+          "tertiary-container": "#844abe",
+        },
+        borderRadius: {
+          "DEFAULT": "0.25rem",
+          "lg": "0.5rem",
+          "xl": "0.75rem",
+          "2xl": "1.5rem",
+          "full": "9999px"
+        },
+        spacing: {
+          "stack-sm": "8px",
+          "stack-md": "24px",
+          "stack-lg": "48px",
+          "stack-xl": "80px",
+          "gutter": "32px",
+          "margin-desktop": "64px",
+          "margin-mobile": "20px",
+          "container-max": "1280px",
+        },
+        fontFamily: {
+          "body-md": ["Hanken Grotesk"],
+          "mono-data": ["Geist"],
+          "body-lg": ["Hanken Grotesk"],
+          "display-lg": ["Hanken Grotesk"],
+          "label-caps": ["Geist"],
+          "headline-md": ["Hanken Grotesk"],
+        },
+        fontSize: {
+          "body-md": ["16px", { lineHeight: "1.6", letterSpacing: "0em", fontWeight: "400" }],
+          "body-lg": ["18px", { lineHeight: "1.6", letterSpacing: "0em", fontWeight: "400" }],
+          "display-lg": ["64px", { lineHeight: "1.1", letterSpacing: "-0.04em", fontWeight: "700" }],
+          "label-caps": ["12px", { lineHeight: "1", letterSpacing: "0.1em", fontWeight: "600" }],
+          "headline-md": ["32px", { lineHeight: "1.3", letterSpacing: "-0.02em", fontWeight: "600" }],
+        }
+      }
+    }
+  }
+</script>
+<style>
+  /* ===== GLOBAL ===== */
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { background-color: #050510; overflow-x: hidden; }
+
+  .bg-grid-pattern {
+    background-image: linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px),
+                      linear-gradient(to bottom, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+  .orbital-glow-primary {
+    background: radial-gradient(circle at center, rgba(124,58,237,0.18) 0%, rgba(124,58,237,0) 70%);
+  }
+  .orbital-glow-secondary {
+    background: radial-gradient(circle at center, rgba(37,0,90,0.45) 0%, rgba(37,0,90,0) 70%);
+  }
+
+  /* ===== GLASS ===== */
+  .glass-panel {
+    background: rgba(11,11,24,0.4);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 0.5px solid rgba(255,255,255,0.1);
+  }
+  .glass-card {
+    background: rgba(15,14,28,0.6);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 1.5rem;
+  }
+
+  /* ===== BUTTONS ===== */
+  @keyframes tabPopIn {
+    0% { opacity: 0; transform: translateY(8px) scale(0.99); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .tab-anim {
+    animation: tabPopIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%);
+    color: #fff;
+    font-family: 'Geist', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border-radius: 8px;
+    padding: 14px 28px;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+  }
+  .btn-primary::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, #9f5fff 0%, #7c3aed 100%);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .btn-primary:hover::before { opacity: 1; }
+  .btn-primary:hover { box-shadow: 0 4px 24px rgba(124,58,237,0.45); transform: translateY(-1px); }
+  .btn-outline {
+    background: transparent;
+    color: #e3e0f3;
+    font-family: 'Geist', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border-radius: 8px;
+    padding: 14px 28px;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(255,255,255,0.15);
+    cursor: pointer;
+  }
+  .btn-outline:hover {
+    border-color: #d2bbff;
+    color: #d2bbff;
+    box-shadow: 0 0 20px rgba(210,187,255,0.12);
+  }
+
+  /* ===== STAT VALUE ===== */
+  .stat-value {
+    background: linear-gradient(135deg, #ffffff 0%, #a3a3b5 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* ===== SECTION LABEL ===== */
+  .section-label {
+    font-family: 'Geist', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: #d2bbff;
+    opacity: 0.7;
+  }
+
+  /* ===== DIVIDER LINE ===== */
+  .glow-divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(124,58,237,0.4), transparent);
+  }
+
+  /* ===== SCROLL REVEAL ===== */
+  .reveal { opacity: 0; transform: translateY(32px); }
+
+  /* ===== PRICING SECTION ===== */
+  .pricing-tab {
+    font-family: 'Geist', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 8px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    color: #958da1;
+    background: transparent;
+    border: none;
+  }
+  .pricing-tab.active {
+    background: rgba(124,58,237,0.25);
+    color: #d2bbff;
+    box-shadow: 0 0 0 1px rgba(124,58,237,0.4);
+  }
+  .pricing-tab:hover:not(.active) { color: #e3e0f3; }
+
+  .price-card {
+    background: rgba(15,14,28,0.7);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 1.25rem;
+    padding: 28px 22px;
+    transition: all 0.35s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .price-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 1.25rem;
+    background: linear-gradient(145deg, rgba(124,58,237,0.04) 0%, transparent 60%);
+    opacity: 0;
+    transition: opacity 0.35s;
+  }
+  .price-card:hover { border-color: rgba(124,58,237,0.35); transform: translateY(-6px); box-shadow: 0 20px 60px rgba(0,0,0,0.4), 0 0 40px rgba(124,58,237,0.12); }
+  .price-card:hover::before { opacity: 1; }
+  .price-card.featured {
+    background: linear-gradient(145deg, #1a0f3a 0%, #0f0a26 100%);
+    border: 1px solid rgba(124,58,237,0.5);
+    box-shadow: 0 0 60px rgba(124,58,237,0.15), inset 0 1px 0 rgba(255,255,255,0.06);
+  }
+  .price-card.featured:hover { transform: translateY(-8px); box-shadow: 0 24px 70px rgba(0,0,0,0.5), 0 0 60px rgba(124,58,237,0.25); }
+
+  .price-row { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+  .price-row:last-child { border-bottom: none; }
+  .price-row .label { font-family: 'Geist', sans-serif; font-size: 11px; color: #958da1; text-transform: uppercase; letter-spacing: 0.06em; }
+  .price-row .value { font-family: 'Geist', sans-serif; font-size: 13px; color: #e3e0f3; font-weight: 500; }
+  .price-row .value.highlight { color: #a78bfa; }
+
+  .launch-badge {
+    position: absolute;
+    top: -1px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(90deg, #7c3aed, #a855f7);
+    color: white;
+    font-family: 'Geist', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 5px 14px;
+    border-radius: 0 0 8px 8px;
+    white-space: nowrap;
+  }
+
+  /* ===== PRICING — NEW RULES BAR ===== */
+  .rules-panel {
+    background: rgba(15,12,28,0.6);
+    border: 1px solid rgba(124,58,237,0.18);
+    border-radius: 16px;
+    padding: 18px 24px;
+    backdrop-filter: blur(12px);
+  }
+  .rules-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 24px;
+    justify-content: center;
+  }
+  .rule-block {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    min-width: 180px;
+  }
+  @media (min-width: 769px) {
+    .mobile-only-rule { display: none !important; }
+  }
+  .rule-icon { font-size: 18px; line-height: 1.3; flex-shrink: 0; }
+  .rule-title { font-family: 'Geist', sans-serif; font-size: 11px; font-weight: 600; color: #958da1; text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 2px; }
+  .rule-detail { font-family: 'Geist', sans-serif; font-size: 13px; color: #c9c0e0; }
+  .rule-detail.perk-allowed { color: #4ade80; font-weight: 600; }
+
+  /* Price card extras */
+  .price-divider { height: 1px; background: rgba(255,255,255,0.05); margin: 10px 0; }
+  .price-row .value.perk-check { color: #4ade80; font-weight: 700; font-size: 14px; }
+
+
+  .step-card {
+    background: rgba(15,14,28,0.65);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 1.5rem;
+    padding: 36px 32px;
+    position: relative;
+    transition: all 0.3s ease;
+  }
+  .step-card:hover { border-color: rgba(124,58,237,0.3); box-shadow: 0 16px 48px rgba(0,0,0,0.35); }
+  .step-number {
+    font-family: 'Geist', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    color: #7c3aed;
+    text-transform: uppercase;
+  }
+  .step-title {
+    font-family: 'Hanken Grotesk', sans-serif;
+    font-size: 36px;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    color: #e3e0f3;
+    line-height: 1.15;
+    margin: 12px 0 8px;
+  }
+  .step-desc { font-size: 15px; color: #958da1; line-height: 1.65; }
+  .check-item { display: flex; align-items: center; gap: 10px; padding: 11px 16px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; margin-top: 10px; }
+  .check-item .check-label { font-family: 'Geist', sans-serif; font-size: 13px; color: #ccc3d8; }
+  .check-dot { width: 20px; height: 20px; border-radius: 50%; background: linear-gradient(135deg, #10b981, #059669); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .check-dot svg { width: 11px; height: 11px; color: white; }
+
+  .cash-card {
+    background: linear-gradient(145deg, #1a0f3a 0%, #110830 100%);
+    border: 1px solid rgba(124,58,237,0.4);
+    border-radius: 1.25rem;
+    padding: 32px;
+    text-align: center;
+    margin-top: 20px;
+  }
+  .cash-amount {
+    font-family: 'Hanken Grotesk', sans-serif;
+    font-size: 52px;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    background: linear-gradient(135deg, #ffffff 0%, #d2bbff 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1;
+  }
+
+  /* ===== TIMELINE ===== */
+  .timeline-card {
+    background: rgba(15,14,28,0.65);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 1.25rem;
+    padding: 28px 24px;
+    flex: 1;
+    min-width: 0;
+    transition: all 0.3s ease;
+  }
+  .timeline-card:hover { border-color: rgba(124,58,237,0.25); }
+  .timeline-date { font-family: 'Geist', sans-serif; font-size: 12px; color: #7c3aed; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px; }
+  .timeline-label { font-size: 13px; color: #958da1; margin-bottom: 8px; }
+  .timeline-value { font-family: 'Hanken Grotesk', sans-serif; font-size: 24px; font-weight: 700; color: #e3e0f3; letter-spacing: -0.02em; line-height: 1.2; }
+  .timeline-value.green { color: #10b981; }
+  .funded-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.25); border-radius: 6px; padding: 4px 10px; }
+  .reward-card {
+    background: linear-gradient(145deg, #1a0f3a 0%, #0d0822 100%);
+    border: 1px solid rgba(124,58,237,0.4);
+    border-radius: 1.5rem;
+    padding: 32px 28px;
+    box-shadow: 0 0 60px rgba(124,58,237,0.12);
+    min-width: 240px;
+  }
+
+  /* ===== PLATFORM ORBIT ===== */
+  .orbit-container { position: relative; width: 340px; height: 340px; margin: auto; }
+  .orbit-center {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 150px; height: 150px;
+    border-radius: 50%;
+    background: rgba(124,58,237,0.08);
+    border: 1px solid rgba(124,58,237,0.2);
+    display: flex; align-items: center; justify-content: center;
+    text-align: center;
+    font-family: 'Hanken Grotesk', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: #ccc3d8;
+    line-height: 1.4;
+    box-shadow: 0 0 40px rgba(124,58,237,0.08);
+  }
+  .orbit-ring {
+    position: absolute;
+    top: 50%; left: 50%;
+    border-radius: 50%;
+    border: 1px solid rgba(124,58,237,0.12);
+    transform: translate(-50%, -50%);
+  }
+  .orbit-planet {
+    position: absolute;
+    width: 64px; height: 64px;
+    border-radius: 16px;
+    background: rgba(15,14,28,0.85);
+    border: 1px solid rgba(255,255,255,0.1);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    transition: transform 0.3s ease;
+    cursor: default;
+    backdrop-filter: blur(12px);
+  }
+  .orbit-planet:hover { transform: scale(1.1) !important; box-shadow: 0 12px 40px rgba(124,58,237,0.25); }
+
+  @keyframes orbit1 { from { transform: rotate(0deg) translateX(130px) rotate(0deg); } to { transform: rotate(360deg) translateX(130px) rotate(-360deg); } }
+  @keyframes orbit2 { from { transform: rotate(120deg) translateX(130px) rotate(-120deg); } to { transform: rotate(480deg) translateX(130px) rotate(-480deg); } }
+  @keyframes orbit3 { from { transform: rotate(240deg) translateX(130px) rotate(-240deg); } to { transform: rotate(600deg) translateX(130px) rotate(-600deg); } }
+  .planet-1 { animation: orbit1 12s linear infinite; }
+  .planet-2 { animation: orbit2 12s linear infinite; }
+  .planet-3 { animation: orbit3 12s linear infinite; }
+  .orbit-anchor { position: absolute; top: 50%; left: 50%; width: 0; height: 0; }
+
+  /* ===== PEACE OF MIND ===== */
+  .peace-section {
+    background: linear-gradient(135deg, #0a1628 0%, #060d1a 50%, #050510 100%);
+    position: relative;
+    overflow: hidden;
+  }
+  .peace-rings {
+    position: absolute;
+    right: 0; top: 50%;
+    transform: translateY(-50%);
+    width: 500px; height: 500px;
+    pointer-events: none;
+  }
+  .peace-ring {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    border: 1px solid rgba(20,184,166,0.08);
+  }
+  .feature-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    padding: 12px 18px;
+    margin-bottom: 10px;
+    width: 100%;
+    transition: all 0.25s;
+  }
+  .feature-badge:hover { border-color: rgba(124,58,237,0.3); background: rgba(124,58,237,0.06); }
+  .feature-badge .icon { width: 32px; height: 32px; border-radius: 8px; background: rgba(124,58,237,0.15); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .feature-badge .badge-label { font-family: 'Geist', sans-serif; font-size: 13px; font-weight: 600; color: #e3e0f3; }
+  .badge-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(124,58,237,0.12);
+    border: 1px solid rgba(124,58,237,0.25);
+    border-radius: 999px;
+    padding: 6px 14px;
+    font-family: 'Geist', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    color: #d2bbff;
+  }
+  .mock-dashboard {
+    background: rgba(8,7,20,0.9);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 32px 80px rgba(0,0,0,0.6);
+  }
+  .mock-header { background: rgba(255,255,255,0.03); border-bottom: 1px solid rgba(255,255,255,0.05); padding: 12px 16px; display: flex; align-items: center; gap: 6px; }
+  .mock-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .mock-url { font-family: 'Geist', sans-serif; font-size: 11px; color: #4a4455; margin-left: 8px; }
+  .reward-total-card {
+    background: linear-gradient(145deg, #1a0f3a 0%, #0f0824 100%);
+    border: 1px solid rgba(124,58,237,0.35);
+    border-radius: 14px;
+    padding: 20px 22px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 0 40px rgba(124,58,237,0.1);
+  }
+  .diamond-icon { font-size: 48px; position: absolute; right: -8px; bottom: -8px; opacity: 0.6; }
+  .reward-total-label { font-family: 'Geist', sans-serif; font-size: 11px; color: #958da1; text-transform: uppercase; letter-spacing: 0.1em; }
+  .reward-total-amount {
+    font-family: 'Hanken Grotesk', sans-serif;
+    font-size: 36px;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    background: linear-gradient(135deg, #fff 0%, #d2bbff 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1.1;
+  }
+  .table-row { display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr; gap: 8px; padding: 9px 0; border-bottom: 1px solid rgba(255,255,255,0.04); font-family: 'Geist', sans-serif; font-size: 12px; color: #6b6880; }
+  .table-row:last-child { border-bottom: none; }
+  .table-header { color: #4a4455; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; }
+
+  /* ===== TESTIMONIALS ===== */
+  .testimonial-card {
+    background: rgba(15,14,28,0.7);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 1.25rem;
+    padding: 24px;
+    transition: all 0.3s ease;
+    break-inside: avoid;
+    margin-bottom: 20px;
+  }
+  .testimonial-card:hover { border-color: rgba(124,58,237,0.25); box-shadow: 0 12px 40px rgba(0,0,0,0.3); transform: translateY(-3px); }
+  .testimonial-stars { color: #f59e0b; font-size: 14px; margin-bottom: 12px; letter-spacing: 2px; }
+  .testimonial-text { font-size: 14px; color: #ccc3d8; line-height: 1.65; margin-bottom: 16px; }
+  .testimonial-author { display: flex; align-items: center; gap: 10px; }
+  .testimonial-avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #7c3aed, #a855f7); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; color: white; flex-shrink: 0; }
+  .testimonial-name { font-family: 'Geist', sans-serif; font-size: 13px; font-weight: 600; color: #e3e0f3; }
+  .testimonial-payout { font-size: 11px; color: #10b981; font-family: 'Geist', sans-serif; font-weight: 600; }
+  .payout-badge { display: inline-flex; align-items: center; gap: 5px; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.2); border-radius: 6px; padding: 3px 8px; font-size: 11px; font-family: 'Geist', sans-serif; color: #10b981; font-weight: 600; margin-top: 6px; }
+
+  /* ===== MARQUEE TICKER ===== */
+  .ticker-wrap { overflow: hidden; white-space: nowrap; background: rgba(124,58,237,0.06); border-top: 1px solid rgba(124,58,237,0.15); border-bottom: 1px solid rgba(124,58,237,0.15); padding: 12px 0; }
+  .ticker-inner { display: inline-flex; animation: ticker 28s linear infinite; }
+  .ticker-item { display: inline-flex; align-items: center; gap: 8px; padding: 0 32px; font-family: 'Geist', sans-serif; font-size: 13px; color: #958da1; }
+  .ticker-item .amount { color: #10b981; font-weight: 600; }
+  .ticker-item .dot { width: 4px; height: 4px; background: rgba(124,58,237,0.5); border-radius: 50%; }
+  @keyframes ticker { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+  /* ===== CHIP TAGS ===== */
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    background: rgba(124,58,237,0.1);
+    border: 1px solid rgba(124,58,237,0.2);
+    color: #d2bbff;
+    font-family: 'Geist', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 6px 14px;
+    border-radius: 999px;
+    transition: all 0.2s;
+  }
+  .chip:hover { background: rgba(124,58,237,0.2); border-color: rgba(124,58,237,0.4); }
+
+  /* ===== MOBILE NAV ===== */
+  .mobile-menu { display: none; flex-direction: column; gap: 2px; cursor: pointer; }
+  .mobile-menu span { width: 22px; height: 2px; background: #ccc3d8; border-radius: 2px; transition: all 0.3s; }
+  @media(max-width: 768px) {
+    .desktop-nav { display: none !important; }
+    .mobile-menu { display: flex; }
+  }
+  .nav-drawer {
+    position: fixed;
+    top: 0; right: -280px; width: 280px; height: 100vh;
+    background: rgba(5,5,16,0.96);
+    backdrop-filter: blur(20px);
+    border-left: 1px solid rgba(255,255,255,0.08);
+    padding: 80px 24px 28px;
+    z-index: 49;
+    flex-direction: column;
+    gap: 4px;
+    transition: right 0.3s ease;
+    display: flex;
+  }
+  .nav-drawer.open { right: 0; }
+  .nav-drawer a { font-family: 'Geist', sans-serif; font-size: 14px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #ccc3d8; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.04); transition: color 0.2s; }
+  .nav-drawer a:hover { color: #d2bbff; }
+
+  /* ===== FOOTER ===== */
+  .footer-link { font-size: 14px; color: #6b6880; transition: color 0.2s; }
+  .footer-link:hover { color: #ccc3d8; }
+  .footer-heading { font-family: 'Geist', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #4a4455; margin-bottom: 16px; }
+  .social-btn {
+    width: 40px; height: 40px; border-radius: 10px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; transition: all 0.25s; cursor: pointer; text-decoration: none;
+  }
+  .social-btn:hover { background: rgba(124,58,237,0.15); border-color: rgba(124,58,237,0.3); transform: translateY(-2px); }
+
+  /* ===== F4U LOGO ANIMATION ===== */
+  @keyframes f4uGlow {
+    0%, 100% { opacity: 0.9; text-shadow: 0 0 0px rgba(210,187,255,0); }
+    50% { opacity: 1; text-shadow: 0 0 18px rgba(210,187,255,0.4); }
+  }
+  @keyframes f4uOrbitPulse {
+    0%, 100% { box-shadow: 0 0 28px rgba(124,58,237,0.1), inset 0 0 20px rgba(124,58,237,0.05); }
+    50% { box-shadow: 0 0 48px rgba(124,58,237,0.22), inset 0 0 30px rgba(124,58,237,0.1); }
+  }
+  @keyframes f4uPeacePulse {
+    0%, 100% { box-shadow: 0 0 32px rgba(124,58,237,0.1); }
+    50% { box-shadow: 0 0 52px rgba(124,58,237,0.22); }
+  }
+  .f4u-logo-type {
+    animation: f4uGlow 3.5s ease-in-out infinite;
+  }
+  #orbit-logo-center {
+    animation: f4uOrbitPulse 4s ease-in-out infinite;
+  }
+  .f4u-peace-logo {
+    animation: f4uPeacePulse 4s ease-in-out infinite;
+  }
+
+
+
+    /* ================================================================
+     MOBILE BREAKPOINT  ≤ 768px
+  ================================================================ */
+  @media (max-width: 768px) {
+
+    /* Body padding for fixed CTA bar */
+    body { padding-bottom: 76px !important; }
+
+    /* Section spacing */
+    .py-stack-xl { padding-top:52px !important; padding-bottom:52px !important; }
+
+    /* Container padding */
+    .px-6, .md\:px-margin-desktop { padding-left:16px !important; padding-right:16px !important; }
+
+    /* ── NAV ─────────────────────────────────────────────────── */
+    .desktop-nav  { display:none !important; }
+    .mobile-menu  { display:flex !important; }
+    .mob-cta-bar  { display:flex !important; }
+
+    /* ── HERO SECTION ────────────────────────────────────────── */
+    h1.font-display-lg, .text-display-lg {
+      font-size: clamp(30px,9vw,42px) !important;
+      line-height: 1.1 !important;
+      letter-spacing: -.03em !important;
+    }
+    /* Hero stat strip */
+    .grid.grid-cols-2.md\:grid-cols-4 {
+      grid-template-columns: repeat(2,1fr) !important;
+      gap: 20px 16px !important;
+    }
+    .stat-value { font-size: 26px !important; }
+
+    /* Hero CTA buttons — stack */
+    .flex.flex-col.sm\:flex-row.gap-stack-md {
+      flex-direction: column !important;
+      gap: 12px !important;
+    }
+    .flex.flex-col.sm\:flex-row.gap-stack-md > * {
+      width: 100% !important;
+      text-align: center !important;
+      justify-content: center !important;
+    }
+
+    /* ── PRICING ─────────────────────────────────────────────── */
+    /* Tab bar — full width pills */
+    #pricing .flex.justify-center > div {
+      width: 100% !important;
+      display: grid !important;
+      grid-template-columns: repeat(3,1fr) !important;
+      gap: 4px !important;
+    }
+    .pricing-tab {
+      font-size: 10px !important;
+      padding: 8px 4px !important;
+      text-align: center !important;
+      min-height: 44px !important;
+    }
+
+    /* Cards — single column */
+    #pricing-cards {
+      grid-template-columns: 1fr !important;
+      gap: 14px !important;
+    }
+    #pricing-cards .price-card {
+      max-width: 100% !important;
+      width: 100% !important;
+    }
+
+    /* Rules bar */
+    .rules-grid { gap:10px 0 !important; flex-direction:column !important; }
+    .rule-block  { min-width:unset !important; width:100% !important; }
+
+    /* ── HOW IT WORKS ────────────────────────────────────────── */
+    .step-card   { padding:22px 18px !important; }
+    .step-title  { font-size:24px !important; }
+    .step-number { font-size:10px !important; }
+
+    /* Cash amount */
+    .cash-amount { font-size:48px !important; }
+
+    /* ── TRADER JOURNEY ──────────────────────────────────────── */
+    /* Timeline — horizontal swipe */
+    .flex.flex-col.sm\:flex-row.gap-4.flex-1 {
+      flex-direction: row !important;
+      overflow-x: auto !important;
+      -webkit-overflow-scrolling: touch !important;
+      scroll-snap-type: x mandatory !important;
+      gap: 10px !important;
+      padding-bottom: 12px !important;
+    }
+    .timeline-card {
+      flex-shrink: 0 !important;
+      width: 185px !important;
+      scroll-snap-align: start !important;
+    }
+
+    /* Journey outer flex → column */
+    .flex.flex-col.lg\:flex-row.gap-6 {
+      flex-direction: column !important;
+    }
+    .reward-card { width:100% !important; }
+
+    /* ── FEATURE / BENTO GRIDS ───────────────────────────────── */
+    .grid-cols-1.md\:grid-cols-2   { grid-template-columns:1fr !important; }
+    .grid-cols-1.md\:grid-cols-3   { grid-template-columns:1fr !important; }
+    .grid-cols-1.lg\:grid-cols-3   { grid-template-columns:1fr !important; }
+    .grid-cols-1.md\:grid-cols-2.lg\:grid-cols-5 { grid-template-columns:repeat(2,1fr) !important; }
+
+    /* ── TESTIMONIALS ────────────────────────────────────────── */
+    .grid.grid-cols-1.md\:grid-cols-3 { grid-template-columns:1fr !important; }
+
+    /* ── FOOTER ──────────────────────────────────────────────── */
+    .grid.grid-cols-2.md\:grid-cols-5 { grid-template-columns:repeat(2,1fr) !important; gap:28px 16px !important; }
+    .grid.grid-cols-1.md\:grid-cols-2 { grid-template-columns:1fr !important; }
+
+    /* ── Touch targets ───────────────────────────────────────── */
+    .btn-primary  { min-height:48px !important; touch-action:manipulation; }
+    .pricing-tab  { touch-action:manipulation; }
+
+    /* Section headings */
+    h2 { font-size:clamp(24px,7vw,36px) !important; }
+  }
+
+  /* ── Extra small phones ──────────────────────────────────── */
+  @media (max-width: 380px) {
+    h1.font-display-lg { font-size:28px !important; }
+    .pricing-tab { font-size:9px !important; padding:7px 2px !important; }
+    .timeline-card { width:162px !important; }
+    .stat-value { font-size:22px !important; }
+  }
+
+  /* ── Disable hover transforms on touch devices ───────────── */
+  @media (hover:none) {
+    .price-card:hover,
+    .step-card:hover,
+    .timeline-card:hover { transform:none !important; }
+  }
+
+  /* ============================================================
+     F4U MOBILE-FIRST  (98% mobile traffic)
+  ============================================================ */
+
+  /* ── Scroll reveal animations ─────────────────────────────── */
+  [data-anim] {
+    opacity: 0;
+    will-change: opacity, transform;
+    transition: opacity 0.7s ease, transform 0.7s cubic-bezier(0.22,0.68,0,1.1);
+  }
+  [data-anim="up"]    { transform: translateY(44px); }
+  [data-anim="scale"] { transform: scale(0.9); }
+  [data-anim="left"]  { transform: translateX(-32px); }
+  [data-anim="right"] { transform: translateX(32px); }
+  [data-anim].visible { opacity: 1; transform: none; }
+
+  /* Stagger siblings */
+  [data-stagger] > * { opacity: 0; transform: translateY(32px);
+    transition: opacity .6s ease, transform .6s cubic-bezier(.22,.68,0,1.1); }
+  [data-stagger] > *.visible { opacity: 1; transform: none; }
+  [data-stagger] > *:nth-child(1){transition-delay:.04s}
+  [data-stagger] > *:nth-child(2){transition-delay:.12s}
+  [data-stagger] > *:nth-child(3){transition-delay:.20s}
+  [data-stagger] > *:nth-child(4){transition-delay:.28s}
+  [data-stagger] > *:nth-child(5){transition-delay:.36s}
+
+  /* ── Floating CTA bar (mobile only, hidden desktop) ───────── */
+  #f4u-mob-cta {
+    display: none;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    z-index: 9999;
+    background: linear-gradient(180deg, rgba(5,5,16,0) 0%, rgba(5,5,16,0.97) 24px);
+    padding: 0 16px 12px;
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+    pointer-events: none;
+  }
+  #f4u-mob-cta-inner {
+    pointer-events: auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(18,18,31,0.96);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(124,58,237,0.3);
+    border-radius: 18px;
+    padding: 10px 14px 10px 16px;
+    box-shadow: 0 -4px 40px rgba(124,58,237,0.18);
+  }
+  #f4u-mob-cta-text strong {
+    display: block;
+    font-family: 'Hanken Grotesk', sans-serif;
+    font-size: 14px; font-weight: 800;
+    color: #e3e0f3; line-height: 1.2;
+  }
+  #f4u-mob-cta-text span {
+    font-family: 'Geist', sans-serif;
+    font-size: 11px; color: #6b7280;
+  }
+  #f4u-mob-cta-btn {
+    flex-shrink: 0;
+    padding: 11px 20px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #7c3aed, #a855f7);
+    color: #fff;
+    font-family: 'Geist', sans-serif;
+    font-size: 13px; font-weight: 700;
+    border: none; cursor: pointer;
+    box-shadow: 0 0 20px rgba(124,58,237,0.5);
+    transition: transform .2s, box-shadow .2s;
+    animation: ctaGlow 2.5s ease-in-out infinite;
+  }
+  #f4u-mob-cta-btn:active { transform: scale(0.96); }
+  @keyframes ctaGlow {
+    0%,100% { box-shadow: 0 0 16px rgba(124,58,237,0.45); }
+    50%      { box-shadow: 0 0 32px rgba(168,85,247,0.75); }
+  }
+
+  /* ── Scroll-x helper ─────────────────────────────────────── */
+  .swipe-row {
+    display: flex;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    gap: 12px;
+    padding-bottom: 4px;
+  }
+  .swipe-row::-webkit-scrollbar { display: none; }
+  .swipe-row > * {
+    flex-shrink: 0;
+    scroll-snap-align: start;
+  }
+
+  /* ── Disable hover on touch devices ─────────────────────── */
+  @media (hover: none) {
+    .price-card:hover,
+    .step-card:hover,
+    .timeline-card:hover { transform: none !important; }
+  }
+
+  /* ============================================================
+     MOBILE ≤ 767px
+  ============================================================ */
+  @media (max-width: 767px) {
+
+    /* Body bottom pad so content isn't behind CTA */
+    body { padding-bottom: 88px !important; overflow-x: hidden; }
+
+    /* Show mobile CTA */
+    #f4u-mob-cta { display: block; }
+
+    /* Tighter section padding */
+    section.py-stack-xl { padding-top: 48px !important; padding-bottom: 48px !important; }
+    .py-stack-xl { padding-top: 48px !important; padding-bottom: 48px !important; }
+
+    /* Full-width containers */
+    .max-w-container-max { padding-left: 16px !important; padding-right: 16px !important; }
+    .px-6 { padding-left: 16px !important; padding-right: 16px !important; }
+
+    /* ── NAV ─────────────────────────────────────────────── */
+    .desktop-nav { display: none !important; }
+    .mobile-menu { display: flex !important; }
+
+    /* ── HERO ────────────────────────────────────────────── */
+    .font-display-lg,
+    h1 { font-size: clamp(28px, 8.5vw, 40px) !important; line-height: 1.12 !important; }
+
+    /* Stat strip: 2 columns */
+    .grid-cols-2 { grid-template-columns: repeat(2,1fr) !important; }
+    [class*="md:grid-cols-4"] { grid-template-columns: repeat(2,1fr) !important; }
+    .stat-value { font-size: 24px !important; }
+
+    /* Hero CTAs: full width stack */
+    .flex-col { flex-direction: column !important; }
+    [class*="sm:flex-row"] { flex-direction: column !important; }
+    [class*="sm:flex-row"] > * { width: 100% !important; justify-content: center !important; }
+    .btn-primary { width: 100% !important; text-align: center !important; min-height: 50px !important; touch-action: manipulation; }
+
+    /* ── PRICING ─────────────────────────────────────────── */
+    /* Tab switcher: 3 equal pills */
+    #pricing .flex.justify-center > div {
+      width: 100% !important;
+      display: grid !important;
+      grid-template-columns: 1fr 1fr 1fr !important;
+      position: relative !important;
+      z-index: 50 !important;
+    }
+    .pricing-tab {
+      font-size: 9.5px !important;
+      padding: 8px 2px !important;
+      line-height: 1.2 !important;
+      min-height: 48px !important;
+      touch-action: manipulation !important;
+      position: relative !important;
+      z-index: 51 !important;
+      pointer-events: auto !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      text-align: center !important;
+    }
+
+    /* Cards: single column, full width */
+    #pricing-cards {
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 16px !important;
+    }
+    #pricing-cards .price-card { width: 100% !important; max-width: 100% !important; }
+
+    /* ── RULES PANEL MOBILE GRID ─────────────────────────────── */
+    .rules-panel {
+      padding: 16px 0 !important;
+    }
+    .rules-grid {
+      display: grid !important;
+      grid-template-columns: repeat(2, 1fr) !important;
+      gap: 10px !important;
+    }
+    /* Small attractive boxes for mobile rules */
+    .rule-block {
+      width: 100% !important;
+      min-width: unset !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      text-align: center !important;
+      background: rgba(124,58,237,0.1) !important;
+      border: 1px solid rgba(124,58,237,0.2) !important;
+      padding: 14px 10px !important;
+      border-radius: 12px !important;
+      gap: 6px !important;
+    }
+    .rule-icon { font-size: 20px !important; margin-bottom: 2px !important; }
+    .rule-title { font-size: 10px !important; line-height: 1.2 !important; }
+    .rule-detail { font-size: 11px !important; line-height: 1.3 !important; }
+
+    /* ── HOW IT WORKS ─────────────────────────────────────── */
+    .step-card { padding: 22px 16px !important; }
+    .step-title { font-size: 22px !important; line-height: 1.2 !important; }
+
+    /* Cash amount */
+    .cash-amount { font-size: 44px !important; }
+    .cash-card   { padding: 20px 16px !important; }
+
+    /* ── TRADER JOURNEY ───────────────────────────────────── */
+    /* Make timeline scroll horizontally on mobile */
+    .flex.flex-col.lg\\:flex-row.gap-6.reveal {
+      flex-direction: column !important;
+      gap: 16px !important;
+    }
+    /* Timeline cards: horizontal swipe strip */
+    .flex.flex-col.sm\\:flex-row.gap-4.flex-1 {
+      display: flex !important;
+      flex-direction: row !important;
+      overflow-x: auto !important;
+      -webkit-overflow-scrolling: touch !important;
+      scroll-snap-type: x mandatory !important;
+      scrollbar-width: none !important;
+      gap: 10px !important;
+      padding-bottom: 8px !important;
+    }
+    .flex.flex-col.sm\\:flex-row.gap-4.flex-1::-webkit-scrollbar { display: none !important; }
+    .timeline-card {
+      flex-shrink: 0 !important;
+      width: 174px !important;
+      min-width: 174px !important;
+      scroll-snap-align: start !important;
+    }
+    /* Reward card: full width under timeline */
+    .reward-card { width: 100% !important; max-width: 100% !important; }
+
+    /* ── FEATURE GRIDS ────────────────────────────────────── */
+    [class*="md:grid-cols-2"],
+    [class*="md:grid-cols-3"],
+    [class*="lg:grid-cols-3"] {
+      grid-template-columns: 1fr !important;
+    }
+    [class*="lg:grid-cols-4"] { grid-template-columns: 1fr !important; }
+    [class*="lg:grid-cols-5"] { grid-template-columns: repeat(2,1fr) !important; }
+
+    /* ── TESTIMONIALS ─────────────────────────────────────── */
+    .testimonial-card,
+    [class*="grid-cols-3"] > div { margin-bottom: 0 !important; }
+
+    /* ── FOOTER ───────────────────────────────────────────── */
+    [class*="md:grid-cols-5"] { grid-template-columns: repeat(2,1fr) !important; gap: 24px 12px !important; }
+
+    /* ── ALL HEADINGS ─────────────────────────────────────── */
+    h2 { font-size: clamp(22px,6.5vw,32px) !important; letter-spacing: -.025em !important; }
+    h3 { font-size: 18px !important; }
+
+    /* ── NO HORIZONTAL OVERFLOW anywhere ─────────────────── */
+    section, main, div { max-width: 100vw; }
+
+    /* ── Ticker ───────────────────────────────────────────── */
+    .ticker-item { padding: 8px 18px; font-size: 12px; }
+    /* ── Ambient Mobile Backdrop Animation ────────────────── */
+    .bg-grid-pattern {
+      animation: driftGrid 12s linear infinite !important;
+    }
+    @keyframes driftGrid {
+      0% { background-position: 0 0; }
+      100% { background-position: 40px 40px; }
+    }
+    .orbital-glow-primary, .orbital-glow-secondary {
+      animation: pulseGlow 6s ease-in-out infinite alternate !important;
+    }
+    @keyframes pulseGlow {
+      0% { opacity: 0.5; transform: scale(0.95); }
+      100% { opacity: 1; transform: scale(1.05); }
+    }
+  }
+
+  /* ── Very small: 360px ──────────────────────────────────── */
+  @media (max-width: 375px) {
+    .pricing-tab { font-size: 8.5px !important; padding: 7px 2px !important; }
+    .timeline-card { width: 158px !important; min-width: 158px !important; }
+    h1 { font-size: 26px !important; }
+    .stat-value { font-size: 21px !important; }
+  }
+
+</style>
+</head>
+<body class="text-on-background font-body-md antialiased overflow-x-hidden relative min-h-screen">
+
+  <button class="mob-cta-btn" onclick="document.getElementById('pricing').scrollIntoView({behavior:'smooth'})">
+    Start Now →
+  </button>
+</div>
+
+
+<!-- ===================== AMBIENT BG ===================== -->
+<div class="fixed inset-0 pointer-events-none z-0">
+  <div class="absolute inset-0 bg-grid-pattern z-0"></div>
+  <div class="absolute top-[-20%] left-[-10%] w-[70vw] h-[70vw] orbital-glow-secondary rounded-full z-0 blur-[100px]"></div>
+  <div class="absolute bottom-[-10%] right-[-5%] w-[60vw] h-[60vw] orbital-glow-primary rounded-full z-0 blur-[120px]"></div>
+</div>
+
+<!-- ===================== NAV ===================== -->
+<nav class="fixed top-0 w-full bg-surface/10 backdrop-blur-xl border-b border-white/10 shadow-sm flex justify-between items-center px-6 md:px-margin-desktop h-20 z-50">
+  <div class="flex items-center gap-stack-lg">
+    <a href="#" style="font-family:'Hanken Grotesk',sans-serif;font-size:22px;font-weight:800;letter-spacing:-0.04em;color:#e3e0f3;text-decoration:none;">
+      Fundings<span style="color:#d2bbff;">4U</span>
+    </a>
+    <div class="desktop-nav hidden md:flex gap-stack-md">
+      <a class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-colors duration-300" href="/#pricing">Challenges</a>
+      <a class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-colors duration-300" href="/#how-it-works">How It Works</a>
+      <a class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-colors duration-300" href="/#platforms">Platforms</a>
+      <a class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-colors duration-300" href="/#testimonials">Reviews</a>
+      <a class="font-label-caps text-label-caps text-primary hover:text-white transition-colors duration-300" href="/partner">Partner Program</a>
+    </div>
+  </div>
+  <div class="flex items-center gap-stack-md">
+    <a class="hidden md:block font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-colors duration-300" href="/login">Login</a>
+    <button class="btn-primary text-xs" style="padding:10px 22px;" onclick="window.location.href='/signup'">Get Funded</button>
+    <div class="mobile-menu md:hidden" id="hamburger" onclick="toggleNav()">
+      <span></span><span></span><span></span>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile drawer backdrop -->
+<div id="mobile-nav-backdrop" onclick="toggleNav()" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:48; backdrop-filter:blur(4px);"></div>
+
+<!-- Mobile drawer -->
+<div class="nav-drawer" id="mobile-nav-drawer">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; padding-bottom:16px; border-bottom:1px solid rgba(255,255,255,0.08);">
+    <a href="#" style="font-family:'Hanken Grotesk',sans-serif;font-size:20px;font-weight:800;letter-spacing:-0.04em;color:#e3e0f3;text-decoration:none;">
+      Fundings<span style="color:#d2bbff;">4U</span>
+    </a>
+    <span onclick="toggleNav()" style="font-size:28px; color:#ccc3d8; cursor:pointer; line-height:1;">&times;</span>
+  </div>
+  <a href="/#pricing" onclick="toggleNav()">Challenges</a>
+  <a href="/#how-it-works" onclick="toggleNav()">How It Works</a>
+  <a href="/#platforms" onclick="toggleNav()">Platforms</a>
+  <a href="/#testimonials" onclick="toggleNav()">Reviews</a>
+  <a href="/partner" style="color: #d2bbff;">Partner Program</a>
+  <a href="/login">Login</a>
+</div>
+
+<!-- ===================== HERO ===================== -->
+<main id="partner-content" class="relative z-10 pt-32 pb-20 min-h-screen">
+  <div class="max-w-container-max mx-auto px-6 md:px-margin-desktop w-full">
+    <!-- Hero Section -->
+    <div class="text-center max-w-4xl mx-auto mb-32 reveal">
+      <div class="inline-flex items-center gap-2 bg-surface-container/50 border border-white/5 rounded-full px-4 py-1.5 w-fit mb-6">
+        <span class="material-symbols-outlined text-primary text-[16px]">handshake</span>
+        <span class="font-label-caps text-label-caps text-primary uppercase tracking-widest">Fundings4U Affiliate Ecosystem</span>
+      </div>
+      <h1 style="font-family:'Hanken Grotesk',sans-serif;font-size:clamp(36px,5vw,64px);font-weight:800;letter-spacing:-0.04em;line-height:1.1;color:#e3e0f3;">
+        The Next Generation<br/>
+        <span style="background:linear-gradient(135deg,#d2bbff 0%,#a78bfa 40%,#7c3aed 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Elite Partner Program.</span>
+      </h1>
+      <p class="font-body-lg text-body-lg text-on-surface-variant mt-6 mx-auto max-w-2xl">
+        Most prop firms only pay when a challenge is sold. Fundings4U pays affiliates at multiple stages: commissions, monthly community accounts, leaderboard prizes, and our exclusive <strong>Success Share™</strong>.
+      </p>
+      <div class="mt-10 flex flex-col sm:flex-row justify-center gap-4">
+        <button class="btn-primary" onclick="window.location.href='/signup'">Become a Partner</button>
+        <button class="btn-outline" onclick="document.getElementById('tiers').scrollIntoView({behavior:'smooth'})">View Partner Levels</button>
+      </div>
+    </div>
+
+    <!-- Stats row -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-6 mb-32 reveal">
+      <div class="glass-card p-6 text-center border border-outline-variant/10 bg-surface/40 hover:border-primary/30 transition-colors">
+        <div class="text-4xl font-bold font-sora text-primary mb-2">Up to 30%</div>
+        <div class="text-xs uppercase tracking-widest text-on-surface-variant font-semibold">Direct Commission</div>
+      </div>
+      <div class="glass-card p-6 text-center border border-outline-variant/10 bg-surface/40 hover:border-primary/30 transition-colors">
+        <div class="text-4xl font-bold font-sora text-primary mb-2">Up to 25%</div>
+        <div class="text-xs uppercase tracking-widest text-on-surface-variant font-semibold">Discount Codes</div>
+      </div>
+      <div class="glass-card p-6 text-center border border-outline-variant/10 bg-surface/40 hover:border-primary/30 transition-colors">
+        <div class="text-4xl font-bold font-sora text-primary mb-2">Monthly</div>
+        <div class="text-xs uppercase tracking-widest text-on-surface-variant font-semibold">Community Accounts</div>
+      </div>
+      <div class="glass-card p-6 text-center border border-outline-variant/10 bg-surface/40 hover:border-primary/30 transition-colors">
+        <div class="text-4xl font-bold font-sora text-primary mb-2">5%</div>
+        <div class="text-xs uppercase tracking-widest text-on-surface-variant font-semibold">Success Share™</div>
+      </div>
+    </div>
+
+    <!-- Tiers Section -->
+    <div id="tiers" class="mb-32">
+      <div class="text-center mb-16 reveal">
+        <h2 class="text-4xl md:text-5xl font-bold font-sora mb-4 text-on-surface">Partner Levels</h2>
+        <p class="text-on-surface-variant max-w-2xl mx-auto">Climb the ranks by generating revenue. Each tier unlocks massive new benefits for you and your community.</p>
+      </div>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 reveal">
+        <!-- Scout -->
+        <div class="glass-card p-8 flex flex-col relative overflow-hidden group hover:-translate-y-2 transition-all duration-300">
+          <div class="absolute top-0 right-0 w-32 h-32 bg-[#cebdff]/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/3"></div>
+          <div class="mb-6"><span class="material-symbols-outlined text-[#cebdff]" style="font-size:32px">military_tech</span></div>
+          <div class="text-sm font-bold uppercase tracking-widest text-[#cebdff]/80 mb-1">Entry Level</div>
+          <div class="text-3xl font-bold font-sora text-on-surface mb-6">Scout</div>
+          
+          <div class="text-xs text-on-surface-variant mb-6 pb-6 border-b border-white/5">$0 - $1,499 Revenue</div>
+          
+          <ul class="space-y-4 mb-8 flex-1">
+            <li class="flex items-center gap-3 text-sm text-on-surface"><span class="material-symbols-outlined text-green-400 text-lg">check_circle</span> 10% Commission</li>
+            <li class="flex items-center gap-3 text-sm text-on-surface"><span class="material-symbols-outlined text-green-400 text-lg">check_circle</span> 10% Discount Code</li>
+            <li class="flex items-center gap-3 text-sm text-on-surface"><span class="material-symbols-outlined text-green-400 text-lg">check_circle</span> Affiliate Dashboard</li>
+            <li class="flex items-center gap-3 text-sm text-on-surface"><span class="material-symbols-outlined text-green-400 text-lg">check_circle</span> Daily Withdrawals</li>
+          </ul>
+        </div>
+
+        <!-- Hunter -->
+        <div class="glass-card p-8 flex flex-col relative overflow-hidden group hover:-translate-y-2 transition-all duration-300" style="border-color: rgba(52, 211, 153, 0.2);">
+          <div class="absolute top-0 right-0 w-32 h-32 bg-[#34d399]/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/3"></div>
+          <div class="mb-6"><span class="material-symbols-outlined text-[#34d399]" style="font-size:32px">track_changes</span></div>
+          <div class="text-sm font-bold uppercase tracking-widest text-[#34d399]/80 mb-1">Community Builder</div>
+          <div class="text-3xl font-bold font-sora text-on-surface mb-6">Hunter</div>
+          
+          <div class="text-xs text-on-surface-variant mb-6 pb-6 border-b border-white/5">$1,500 - $5,999 Revenue</div>
+          
+          <ul class="space-y-4 mb-8 flex-1">
+            <li class="flex items-center gap-3 text-sm text-on-surface"><span class="material-symbols-outlined text-green-400 text-lg">check_circle</span> 15% Commission</li>
+            <li class="flex items-center gap-3 text-sm text-on-surface"><span class="material-symbols-outlined text-green-400 text-lg">check_circle</span> 15% Discount Code</li>
+            <li class="flex items-center gap-3 text-sm text-on-surface"><span class="material-symbols-outlined text-green-400 text-lg">check_circle</span> 2× $5K Community Accounts/mo</li>
+            <li class="flex items-start gap-3 text-sm text-on-surface"><span class="material-symbols-outlined text-green-400 text-lg">check_circle</span> <div><strong>Success Share™</strong><br><span class="text-[11px] text-on-surface-variant">5% of payouts from 1st 5 traders</span></div></li>
+          </ul>
+        </div>
+
+        <!-- Apex -->
+        <div class="glass-card p-8 flex flex-col relative overflow-hidden group hover:-translate-y-2 transition-all duration-300" style="border-color: rgba(96, 165, 250, 0.3); background: rgba(96, 165, 250, 0.02);">
+          <div class="absolute top-0 right-0 w-32 h-32 bg-[#60a5fa]/20 rounded-full blur-2xl -translate-y-1/2 translate-x-1/3"></div>
+          <div class="mb-6"><span class="material-symbols-outlined text-[#60a5fa]" style="font-size:32px">diamond</span></div>
+          <div class="text-sm font-bold uppercase tracking-widest text-[#60a5fa]/80 mb-1">Volume Leader</div>
+          <div class="text-3xl font-bold font-sora text-on-surface mb-6">Apex</div>
+          
+          <div class="text-xs text-on-surface-variant mb-6 pb-6 border-b border-white/5">$6,000 - $24,999 Revenue</div>
+          
+          <ul class="space-y-4 mb-8 flex-1">
+            <li class="flex items-center gap-3 text-sm text-on-surface"><span class="material-symbols-outlined text-green-400 text-lg">check_circle</span> 20% Commission</li>
+            <li class="flex items-center gap-3 text-sm text-on-surface"><span class="material-symbols-outlined text-green-400 text-lg">check_circle</span> 20% Discount Code</li>
+            <li class="flex items-center gap-3 text-sm text-on-surface"><span class="material-symbols-outlined text-green-400 text-lg">check_circle</span> 2× $5K & 1× $25K Accounts/mo</li>
+            <li class="flex items-start gap-3 text-sm text-on-surface"><span class="material-symbols-outlined text-green-400 text-lg">check_circle</span> <div><strong>Success Share™</strong><br><span class="text-[11px] text-on-surface-variant">5% of payouts from 1st 20 traders</span></div></li>
+          </ul>
+        </div>
+
+        <!-- Legend -->
+        <div class="glass-card p-8 flex flex-col relative overflow-hidden group hover:-translate-y-2 transition-all duration-300" style="border-color: rgba(245, 200, 66, 0.4); background: rgba(245, 200, 66, 0.05); box-shadow: 0 0 40px rgba(245,200,66,0.1);">
+          <div class="launch-badge" style="background: linear-gradient(90deg, #f5c842, #f9a826); color: #111;">MAX RANK</div>
+          <div class="absolute top-0 right-0 w-32 h-32 bg-[#f5c842]/20 rounded-full blur-2xl -translate-y-1/2 translate-x-1/3"></div>
+          <div class="mb-6 mt-2"><span class="material-symbols-outlined text-[#f5c842]" style="font-size:32px">local_fire_department</span></div>
+          <div class="text-sm font-bold uppercase tracking-widest text-[#f5c842]/80 mb-1">Industry Elite</div>
+          <div class="text-3xl font-bold font-sora text-on-surface mb-6">Legend</div>
+          
+          <div class="text-xs text-on-surface-variant mb-6 pb-6 border-b border-white/5">$25,000+ Revenue</div>
+          
+          <ul class="space-y-4 mb-8 flex-1">
+            <li class="flex items-center gap-3 text-sm text-on-surface"><span class="material-symbols-outlined text-[#f5c842] text-lg">check_circle</span> <strong>30% Commission</strong></li>
+            <li class="flex items-center gap-3 text-sm text-on-surface"><span class="material-symbols-outlined text-[#f5c842] text-lg">check_circle</span> <strong>25% Discount Code</strong></li>
+            <li class="flex items-center gap-3 text-sm text-on-surface"><span class="material-symbols-outlined text-[#f5c842] text-lg">check_circle</span> <strong>2× $25K & 1× $50K Accounts/mo</strong></li>
+            <li class="flex items-start gap-3 text-sm text-on-surface"><span class="material-symbols-outlined text-[#f5c842] text-lg">check_circle</span> <div><strong>Success Share™</strong><br><span class="text-[11px] text-on-surface-variant">5% of payouts from 1st 50 traders</span></div></li>
+            <li class="flex items-center gap-3 text-sm text-on-surface"><span class="material-symbols-outlined text-[#f5c842] text-lg">check_circle</span> Custom Discount Landing Page</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Success Share Explanation -->
+    <div class="glass-card p-10 md:p-16 mb-32 relative overflow-hidden reveal border-tertiary/30 bg-tertiary/5">
+      <div class="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 pointer-events-none"></div>
+      <div class="flex flex-col md:flex-row items-center gap-10 relative z-10">
+        <div class="flex-1">
+          <div class="text-xs font-bold uppercase tracking-widest text-tertiary mb-3">Industry First</div>
+          <h2 class="text-4xl font-bold font-sora text-on-surface mb-6">Success Share™</h2>
+          <p class="text-on-surface-variant text-lg leading-relaxed mb-6">
+            We don't just want you to sell challenges; we want you to recruit <em>great traders</em>. That's why we built Success Share™.
+          </p>
+          <p class="text-on-surface-variant text-lg leading-relaxed mb-8">
+            When a trader you refer gets funded and receives a payout, <strong class="text-on-surface">you automatically receive 5% of their payout amount</strong> credited directly to your affiliate balance. When they win, you win.
+          </p>
+          <div class="inline-flex items-center gap-3 bg-surface border border-outline-variant/30 rounded-xl px-5 py-3">
+            <span class="material-symbols-outlined text-green-400">payments</span>
+            <span class="text-sm font-semibold text-on-surface">Available from Hunter rank and above.</span>
+          </div>
+        </div>
+        <div class="flex-1 w-full bg-surface-container-lowest/80 border border-outline-variant/20 rounded-2xl p-8 backdrop-blur-xl">
+          <div class="text-center mb-8">
+            <div class="text-sm text-on-surface-variant mb-2">Example Payout</div>
+            <div class="text-4xl font-mono font-bold text-primary">$10,000</div>
+          </div>
+          <div class="space-y-4">
+            <div class="flex justify-between items-center p-4 bg-surface rounded-xl border border-white/5">
+              <span class="text-sm text-on-surface-variant">Trader Keeps (80%)</span>
+              <span class="font-mono font-bold text-on-surface">$8,000</span>
+            </div>
+            <div class="flex justify-between items-center p-4 bg-tertiary/10 rounded-xl border border-tertiary/30">
+              <span class="text-sm font-bold text-tertiary">You Earn (5%)</span>
+              <span class="font-mono font-bold text-tertiary">+$500</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Milestones -->
+    <div class="mb-32 reveal">
+      <div class="text-center mb-16">
+        <h2 class="text-4xl font-bold font-sora mb-4 text-on-surface">Lifetime Milestones</h2>
+        <p class="text-on-surface-variant max-w-2xl mx-auto">Your lifetime revenue generated unlocks permanent physical and cash rewards. These never reset.</p>
+      </div>
+      
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="bg-surface-container-lowest border border-outline-variant/20 rounded-2xl p-6 text-center hover:border-primary/50 transition-colors">
+          <div class="text-sm font-mono text-on-surface-variant mb-2">$10,000</div>
+          <div class="text-lg font-bold text-on-surface mb-2">iPhone Pro</div>
+          <div class="text-xs text-on-surface-variant/50">Latest Generation</div>
+        </div>
+        <div class="bg-surface-container-lowest border border-outline-variant/20 rounded-2xl p-6 text-center hover:border-primary/50 transition-colors">
+          <div class="text-sm font-mono text-on-surface-variant mb-2">$50,000</div>
+          <div class="text-lg font-bold text-on-surface mb-2">MacBook Pro</div>
+          <div class="text-xs text-on-surface-variant/50">M-Series Chip</div>
+        </div>
+        <div class="bg-surface-container-lowest border border-outline-variant/20 rounded-2xl p-6 text-center hover:border-primary/50 transition-colors">
+          <div class="text-sm font-mono text-on-surface-variant mb-2">$110,000</div>
+          <div class="text-lg font-bold text-on-surface mb-2">Moto Fund</div>
+          <div class="text-xs text-on-surface-variant/50">Rolex or equivalent cash</div>
+        </div>
+        <div class="bg-surface-container-lowest border border-outline-variant/20 rounded-2xl p-6 text-center hover:border-primary/50 transition-colors">
+          <div class="text-sm font-mono text-on-surface-variant mb-2">$250,000</div>
+          <div class="text-lg font-bold text-on-surface mb-2">Car Fund</div>
+          <div class="text-xs text-on-surface-variant/50">$30,000 Bonus</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CTA -->
+    <div class="text-center py-20 reveal mb-20">
+      <h2 class="text-4xl font-bold font-sora mb-6 text-on-surface">Ready to build your community?</h2>
+      <p class="text-on-surface-variant max-w-xl mx-auto mb-10">Sign up in seconds, grab your referral link, and start earning up to 30% commission immediately.</p>
+      <button class="btn-primary" onclick="window.location.href='/signup'" style="padding: 16px 40px; font-size: 14px;">Become a Partner Now</button>
+    </div>
+
+  </div>
+</main>
+<script>
+  function toggleNav() {
+    const drawer = document.getElementById('mobile-nav-drawer');
+    const backdrop = document.getElementById('mobile-nav-backdrop');
+    if (drawer.classList.contains('open')) {
+      drawer.classList.remove('open');
+      backdrop.style.display = 'none';
+      document.body.style.overflow = '';
+    } else {
+      drawer.classList.add('open');
+      backdrop.style.display = 'block';
+      document.body.style.overflow = 'hidden';
+    }
+  }
+
+  gsap.registerPlugin(ScrollTrigger);
+  gsap.utils.toArray('.reveal').forEach(elem => {
+    gsap.to(elem, {
+      scrollTrigger: { trigger: elem, start: "top 85%" },
+      y: 0, opacity: 1, duration: 0.8, ease: "power3.out"
+    });
+  });
+</script>
+<footer class="relative z-10 border-t border-outline-variant/20" style="background:rgba(5,5,16,0.95);">
+</footer>
+
+<!-- ===================== SCRIPTS ===================== -->
+<!-- Three.js Globe -->
+<script src="https://ajax.googleapis.com/ajax/libs/threejs/r125/three.min.js"></script>
+<script>
+(function() {
+  const container = document.getElementById('threejs-container-hero');
+  if (!container) return;
+  const width = container.clientWidth || window.innerWidth;
+  const height = container.clientHeight || window.innerHeight;
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
+  camera.position.z = 180;
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer.setSize(width, height);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  container.appendChild(renderer.domElement);
+
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+  scene.add(ambientLight);
+  const mainLight = new THREE.PointLight(0x7C3AED, 2, 500);
+  mainLight.position.set(150, 150, 150);
+  scene.add(mainLight);
+  const rimLight = new THREE.PointLight(0xA855F7, 1.5, 500);
+  rimLight.position.set(-150, -50, 50);
+  scene.add(rimLight);
+
+  const globeGroup = new THREE.Group();
+  scene.add(globeGroup);
+  const globeGeom = new THREE.SphereGeometry(60, 64, 64);
+  const globeMat = new THREE.MeshPhongMaterial({ color: 0x050510, emissive: 0x111122, specular: 0x7C3AED, shininess: 40, transparent: true, opacity: 0.85 });
+  const globe = new THREE.Mesh(globeGeom, globeMat);
+  globeGroup.add(globe);
+  const wireframeGeom = new THREE.SphereGeometry(60.5, 40, 40);
+  const wireframeMat = new THREE.MeshBasicMaterial({ color: 0x7C3AED, wireframe: true, transparent: true, opacity: 0.15 });
+  const wireframe = new THREE.Mesh(wireframeGeom, wireframeMat);
+  globeGroup.add(wireframe);
+
+  const beltGroup = new THREE.Group();
+  beltGroup.rotation.z = Math.PI * 0.15;
+  beltGroup.rotation.x = Math.PI * 0.1;
+  scene.add(beltGroup);
+  const currencies = ['$', '€', '£', '¥', '₿', '₣', '₹'];
+  const symbolCount = 18;
+  const radius = 85;
+  function createSymbolTexture(char) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 128; canvas.height = 128;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, 128, 128);
+    ctx.fillStyle = 'white';
+    ctx.font = 'bold 80px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(char, 64, 64);
+    return new THREE.CanvasTexture(canvas);
+  }
+  const symbolTextures = currencies.map(createSymbolTexture);
+  for (let i = 0; i < symbolCount; i++) {
+    const angle = (i / symbolCount) * Math.PI * 2;
+    const texture = symbolTextures[i % symbolTextures.length];
+    const spriteMat = new THREE.SpriteMaterial({ map: texture, color: 0xffffff, transparent: true, opacity: 0.9 });
+    const sprite = new THREE.Sprite(spriteMat);
+    sprite.position.set(Math.cos(angle) * radius, 0, Math.sin(angle) * radius);
+    sprite.scale.set(14, 14, 1);
+    beltGroup.add(sprite);
+  }
+  const ringGeom = new THREE.TorusGeometry(radius, 0.4, 16, 100);
+  const ringMat = new THREE.MeshBasicMaterial({ color: 0x7C3AED, transparent: true, opacity: 0.25 });
+  const ring = new THREE.Mesh(ringGeom, ringMat);
+  ring.rotation.x = Math.PI / 2;
+  beltGroup.add(ring);
+
+  const starGeom = new THREE.BufferGeometry();
+  const starCount = 800;
+  const starPos = new Float32Array(starCount * 3);
+  for (let i = 0; i < starCount * 3; i++) starPos[i] = (Math.random() - 0.5) * 800;
+  starGeom.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+  const starMat = new THREE.PointsMaterial({ size: 1.5, color: 0x7C3AED, transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending });
+  const stars = new THREE.Points(starGeom, starMat);
+  scene.add(stars);
+
+  let mouseX = 0, mouseY = 0;
+  window.addEventListener('mousemove', (e) => {
+    mouseX = (e.clientX - window.innerWidth / 2) / (window.innerWidth / 2);
+    mouseY = (e.clientY - window.innerHeight / 2) / (window.innerHeight / 2);
+  });
+
+  function animate() {
+    requestAnimationFrame(animate);
+    globeGroup.rotation.y += 0.002;
+    beltGroup.rotation.y -= 0.004;
+    camera.position.x += (mouseX * 40 - camera.position.x) * 0.05;
+    camera.position.y += (-mouseY * 40 - camera.position.y) * 0.05;
+    camera.lookAt(scene.position);
+    renderer.render(scene, camera);
+  }
+  window.addEventListener('resize', () => {
+    const w = container.clientWidth || window.innerWidth;
+    const h = container.clientHeight || window.innerHeight;
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+    renderer.setSize(w, h);
+  });
+  animate();
+})();
+</script>
+
+<!-- Chart.js Scale Chart -->
+<script>
+(function() {
+  const canvas = document.getElementById('scaleChart');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['$10K', '$25K', '$50K', '$100K', '$165K', '$500K', '$2M'],
+      datasets: [{
+        data: [10, 25, 50, 100, 165, 500, 2000],
+        backgroundColor: (ctx) => {
+          const idx = ctx.dataIndex;
+          const n = 7;
+          const ratio = idx / (n - 1);
+          const r = Math.round(124 + (210 - 124) * ratio);
+          const g = Math.round(58 + (187 - 58) * ratio);
+          const b = Math.round(237 - (237 - 255) * ratio);
+          return `rgba(${r},${g},${b},${0.3 + ratio * 0.6})`;
+        },
+        borderRadius: 6,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: {
+        callbacks: { label: (c) => c.raw >= 1000 ? `$${c.raw/1000}M` : `$${c.raw}K` }
+      }},
+      scales: {
+        x: { grid: { display: false }, ticks: { color: '#6b6880', font: { family: 'Geist', size: 10 } } },
+        y: { display: false, grid: { display: false } }
+      }
+    }
+  });
+})();
+</script>
+
+<!-- GSAP Animations -->
+<script>
+gsap.registerPlugin(ScrollTrigger);
+gsap.utils.toArray('.reveal').forEach((el) => {
+  gsap.fromTo(el,
+    { opacity: 0, y: 40 },
+    {
+      opacity: 1, y: 0, duration: 0.85, ease: 'power3.out',
+      scrollTrigger: { trigger: el, start: 'top 88%', toggleActions: 'play none none none' }
+    }
+  );
+});
+</script>
+
+<!-- Pricing Tab Switcher -->
+<script>
+/* ── Payout HTML snippets ─────────────────────────────────── */
+const payoutWeekly = `
+  <div style="border-top:1px solid rgba(255,255,255,0.05);margin-top:10px;padding-top:12px;">
+    <div style="font-size:10px;font-weight:600;color:#a78bfa;text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;">Payout Schedule</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <span style="font-size:13px;font-weight:700;color:#e3e0f3;">Weekly</span>
+      <span style="font-size:12px;font-weight:700;color:#a78bfa;background:rgba(167,139,250,0.12);border:1px solid rgba(167,139,250,0.25);border-radius:6px;padding:3px 9px;">80% Split</span>
+    </div>
+    <div style="font-size:11px;color:#6b7280;margin-top:5px;">Paid every week on profits</div>
+  </div>`;
+
+const payoutFlexible = `
+  <div style="border-top:1px solid rgba(255,255,255,0.05);margin-top:10px;padding-top:12px;">
+    <div style="font-size:10px;font-weight:600;color:#a78bfa;text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;">Payout Options</div>
+    <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;">
+      <span style="font-size:10px;font-weight:600;color:#4ade80;background:rgba(74,222,128,0.1);border:1px solid rgba(74,222,128,0.3);border-radius:6px;padding:3px 8px;">Daily</span>
+      <span style="font-size:10px;font-weight:600;color:#d2bbff;background:rgba(210,187,255,0.08);border:1px solid rgba(210,187,255,0.2);border-radius:6px;padding:3px 8px;">Bi-Weekly</span>
+      <span style="font-size:10px;font-weight:600;color:#d2bbff;background:rgba(210,187,255,0.08);border:1px solid rgba(210,187,255,0.2);border-radius:6px;padding:3px 8px;">Monthly</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;background:rgba(245,180,0,0.07);border:1px solid rgba(245,180,0,0.2);border-radius:8px;padding:6px 9px;">
+      <span style="font-size:14px;">⚡</span>
+      <span style="font-size:11px;color:#f5b400;font-weight:600;">Daily payout add-on: <strong>+$18</strong></span>
+    </div>
+  </div>`;
+
+/* ── Pricing data ──────────────────────────────────────────── */
+const pricingData = {
+  '2step': {
+    sizes:  ['$5K', '$25K', '$50K', '$100K'],
+    prices: [26, 139, 209, 399],
+    p1: '6%', p2: '3%',
+    cards: 4,
+    payout: payoutWeekly,
+  },
+  instant: {
+    sizes:  ['$5K', '$25K', '$50K'],
+    prices: [69, 189, 399],
+    p1: '0%', p2: '0%',
+    cards: 3,
+    payout: payoutFlexible,
+  },
+  unlimited: {
+    sizes:  ['$5K', '$25K', '$50K', '$150K'],
+    prices: [89, 229, 349, 1609],
+    p1: '10%', p2: '5%',
+    cards: 4,
+    payout: payoutFlexible,
+  },
+};
+
+/* ── Tab switcher ──────────────────────────────────────────── */
+function switchTab(type) {
+  const data = pricingData[type] || pricingData['2step'];
+  const grid = document.getElementById('pricing-cards');
+  const card4 = document.getElementById('card-4th');
+
+  /* 1. Active tab highlight */
+  document.querySelectorAll('.pricing-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + type).classList.add('active');
+
+  /* Re-trigger animation for cards */
+  grid.classList.remove('tab-anim');
+  void grid.offsetWidth;
+  grid.classList.add('tab-anim');
+
+  /* 2. Rules bar */
+  ['2step','instant','unlimited'].forEach(id => {
+    const el = document.getElementById('rules-' + id);
+    if (el) {
+      el.style.display = (id === type) ? '' : 'none';
+      if (id === type) {
+        el.classList.remove('tab-anim');
+        void el.offsetWidth;
+        el.classList.add('tab-anim');
+      }
+    }
+  });
+
+  /* 3. Grid columns — 3 for Instant (no 4th tier), 4 for others */
+  const is3 = data.cards === 3;
+  grid.className = grid.className
+    .replace(/lg:grid-cols-\d/g, '')
+    .trim() + (is3 ? ' lg:grid-cols-3' : ' lg:grid-cols-4');
+
+  /* 4. Show / hide 4th card */
+  if (card4) card4.style.display = is3 ? 'none' : '';
+
+  /* 5. Update each visible card */
+  const cards = grid.querySelectorAll('.price-card');
+  cards.forEach((card, i) => {
+    if (is3 && i === 3) return; // skip hidden 4th
+
+    /* Account size */
+    const sizeEl = card.querySelector('.card-acct-size');
+    if (sizeEl && data.sizes[i]) sizeEl.textContent = data.sizes[i];
+
+    /* Price */
+    const priceEl = card.querySelector('.card-price');
+    if (priceEl && data.prices[i] != null) priceEl.textContent = '$' + data.prices[i];
+
+    /* Phase targets */
+    const p1El = card.querySelector('.card-p1');
+    if (p1El) p1El.textContent = data.p1;
+    const p2El = card.querySelector('.card-p2');
+    if (p2El) p2El.textContent = data.p2;
+
+    /* Payout section */
+    const payEl = card.querySelector('.card-payout-section');
+    if (payEl) payEl.innerHTML = data.payout;
+  });
+}
+
+/* ── Init on load — set correct default (2step) ───────────── */
+let _currentTab = '2step';
+const _originalSwitchTab = switchTab;
+switchTab = function(type) {
+  _currentTab = type;
+  _originalSwitchTab(type);
+  // Update data attributes on all Buy buttons
+  const data = pricingData[type] || pricingData['2step'];
+  const buttons = document.querySelectorAll('#pricing-cards .btn-primary');
+  buttons.forEach((btn, i) => {
+    if (data.sizes[i]) btn.dataset.size = data.sizes[i];
+    if (data.prices[i] != null) btn.dataset.price = data.prices[i];
+    btn.dataset.type = type;
+  });
+};
+document.addEventListener('DOMContentLoaded', () => switchTab('2step'));
+
+/* ── Buy Challenge — saves plan & routes to signup/checkout ─── */
+function buyChallenge() {
+  const btn = event.currentTarget;
+  const size = btn.dataset.size || btn.closest('.price-card')?.querySelector('.card-acct-size')?.textContent || '';
+  const price = btn.dataset.price || btn.closest('.price-card')?.querySelector('.card-price')?.textContent?.replace('$','') || 0;
+  const type = btn.dataset.type || _currentTab;
+
+  const plan = { plan_type: type, account_size: size, price_usd: parseFloat(price) };
+  localStorage.setItem('f4u_pending_plan', JSON.stringify(plan));
+
+  // If already logged in → go straight to checkout
+  const token = localStorage.getItem('f4u_token');
+  if (token) {
+    window.location.href = '/checkout';
+    return;
+  }
+
+  // Not logged in → go to signup page (which redirects to /checkout after account creation)
+  window.location.href = '/signup';
+}
+
+  
+</script>
+
+
+<!-- Mobile Nav -->
+<script>
+function toggleNav() {
+  const drawer = document.getElementById('mobile-nav-drawer');
+  const backdrop = document.getElementById('mobile-nav-backdrop');
+  drawer.classList.toggle('open');
+  if (drawer.classList.contains('open')) {
+    backdrop.style.display = 'block';
+  } else {
+    backdrop.style.display = 'none';
+  }
+}
+</script>
+
+<!-- Payout Ticker -->
+<script>
+const payouts = [
+  { name: 'Ahmed M.', amount: '$8,240', flag: '🇦🇪' },
+  { name: 'Priya K.', amount: '$3,150', flag: '🇮🇳' },
+  { name: 'Carlos R.', amount: '$12,800', flag: '🇲🇽' },
+  { name: 'Yuki N.', amount: '$9,600', flag: '🇯🇵' },
+  { name: 'Omar A.', amount: '$41,250', flag: '🇸🇦' },
+  { name: 'Jana K.', amount: '$14,100', flag: '🇵🇱' },
+  { name: 'Rahul S.', amount: '$26,242', flag: '🇮🇳' },
+  { name: 'Lena W.', amount: '$5,870', flag: '🇩🇪' },
+  { name: 'Miguel C.', amount: '$3,890', flag: '🇧🇷' },
+  { name: 'Fatima Z.', amount: '$7,400', flag: '🇲🇦' },
+];
+function buildTicker() {
+  const inner = document.getElementById('tickerInner');
+  let html = '';
+  for (let r = 0; r < 2; r++) {
+    payouts.forEach(p => {
+      html += `<div class="ticker-item"><span>${p.flag} <strong style="color:#ccc3d8;">${p.name}</strong> just received</span><span class="amount">${p.amount}</span><span class="dot"></span></div>`;
+    });
+  }
+  inner.innerHTML = html;
+}
+buildTicker();
+</script>
+
+
+<!-- ── F4U Scroll Animations ──────────────────────────── -->
+<script>
+(function () {
+  'use strict';
+
+  /* ── Mark elements for animation ─────────────────────── */
+  var selectors = [
+    { q: '.section-label',            a: 'up' },
+    { q: 'h2',                        a: 'up' },
+    { q: '.reveal',                   a: 'up' },
+    { q: '.price-card',               a: 'up' },
+    { q: '.step-card',                a: 'up' },
+    { q: '.timeline-card',            a: 'up' },
+    { q: '.reward-card',              a: 'scale' },
+    { q: '.cash-card',                a: 'scale' },
+    { q: '.stat-value',               a: 'scale' },
+    { q: '.rules-panel',              a: 'up' },
+    { q: '.glow-divider',             a: 'scale' },
+    { q: '.testimonial-card',         a: 'up' },
+  ];
+
+  selectors.forEach(function (item) {
+    document.querySelectorAll(item.q).forEach(function (el) {
+      if (!el.dataset.anim) {
+        el.dataset.anim = item.a;
+      }
+    });
+  });
+
+  /* ── Mark grids for stagger ──────────────────────────── */
+  ['#pricing-cards'].forEach(function (sel) {
+    var el = document.querySelector(sel);
+    if (el) el.dataset.stagger = '';
+  });
+
+  /* ── IntersectionObserver ────────────────────────────── */
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+        io.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.1, rootMargin: '0px 0px -32px 0px' });
+
+  document.querySelectorAll('[data-anim]').forEach(function (el) { io.observe(el); });
+
+  /* Stagger grids */
+  var staggerObs = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (e.isIntersecting) {
+        Array.from(e.target.children).forEach(function (child, i) {
+          setTimeout(function () { child.classList.add('visible'); }, i * 90);
+        });
+        staggerObs.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.05 });
+
+  document.querySelectorAll('[data-stagger]').forEach(function (el) { staggerObs.observe(el); });
+
+  /* ── Number counter ──────────────────────────────────── */
+  function runCounter(el) {
+    var target   = parseFloat(el.dataset.countup) || 0;
+    var suffix   = el.dataset.suffix || '';
+    var isD      = el.textContent.charAt(0) === '$';
+    var duration = 1600;
+    var start    = null;
+    function step(ts) {
+      if (!start) start = ts;
+      var p = Math.min((ts - start) / duration, 1);
+      var ease = 1 - Math.pow(1 - p, 3);
+      el.textContent = (isD ? '$' : '') + Math.floor(ease * target) + suffix;
+      if (p < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+
+  var counterObs = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (e.isIntersecting) {
+        runCounter(e.target);
+        counterObs.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.6 });
+
+  document.querySelectorAll('[data-countup]').forEach(function (el) { counterObs.observe(el); });
+
+  /* ── Hide/show mobile CTA near pricing ──────────────── */
+  var cta     = document.getElementById('f4u-mob-cta');
+  var pricing = document.getElementById('pricing');
+  if (cta && pricing) {
+    var pObs = new IntersectionObserver(function (entries) {
+      cta.style.transition = 'opacity .4s ease, transform .4s ease';
+      if (entries[0].isIntersecting) {
+        cta.style.opacity = '0';
+        cta.style.transform = 'translateY(16px)';
+        cta.style.pointerEvents = 'none';
+      } else {
+        cta.style.opacity = '1';
+        cta.style.transform = 'translateY(0)';
+        cta.style.pointerEvents = '';
+      }
+    }, { threshold: 0.15 });
+    pObs.observe(pricing);
+  }
+
+})();
+</script>
+
+<!-- ===================== AUTH GATE MODAL ===================== -->
+<style>
+#authModal{
+  display:none;position:fixed;inset:0;z-index:9999;
+  align-items:center;justify-content:center;
+  background:rgba(5,5,16,0.85);backdrop-filter:blur(12px);
+  padding:20px;
+}
+.auth-modal-box{
+  background:linear-gradient(145deg,#0d0b1e,#110e24);
+  border:1px solid rgba(124,58,237,0.25);
+  border-radius:24px;width:100%;max-width:460px;
+  box-shadow:0 0 80px rgba(124,58,237,0.15),0 32px 64px rgba(0,0,0,0.6);
+  overflow:hidden;position:relative;
+  animation:modalIn .3s cubic-bezier(0.34,1.4,0.64,1);
+}
+@keyframes modalIn{from{opacity:0;transform:scale(0.92) translateY(20px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.auth-modal-header{
+  padding:28px 28px 0;
+  background:linear-gradient(180deg,rgba(124,58,237,0.08) 0%,transparent 100%);
+}
+.auth-modal-plan-pill{
+  display:inline-flex;align-items:center;gap:6px;
+  background:rgba(124,58,237,0.15);border:1px solid rgba(124,58,237,0.3);
+  border-radius:20px;padding:5px 14px;font-size:11px;font-weight:700;
+  color:#c4b5fd;text-transform:uppercase;letter-spacing:.07em;margin-bottom:16px;
+}
+.auth-modal-title{
+  font-family:'Hanken Grotesk',sans-serif;font-size:22px;font-weight:800;
+  color:#e3e0f3;letter-spacing:-0.03em;margin-bottom:4px;
+}
+.auth-modal-sub{font-size:13px;color:#635c79;margin-bottom:22px;}
+.auth-close-btn{
+  position:absolute;top:18px;right:18px;width:32px;height:32px;border-radius:50%;
+  background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);
+  display:flex;align-items:center;justify-content:center;cursor:pointer;
+  font-size:16px;color:#635c79;transition:all .2s;
+}
+.auth-close-btn:hover{background:rgba(255,255,255,0.1);color:#e3e0f3;}
+
+/* Tabs */
+.auth-tabs{display:flex;gap:0;padding:0 28px;border-bottom:1px solid rgba(255,255,255,0.06);}
+.auth-tab{
+  flex:1;padding:12px 0;font-size:13px;font-weight:600;color:#635c79;
+  cursor:pointer;text-align:center;border-bottom:2px solid transparent;
+  transition:all .2s;margin-bottom:-1px;
+}
+.auth-tab:hover{color:#9b93ae;}
+.auth-tab-active{color:#c4b5fd !important;border-bottom-color:#7c3aed !important;}
+
+/* Forms */
+.auth-form-body{padding:24px 28px 28px;display:flex;flex-direction:column;gap:14px;}
+.auth-field-group{display:flex;flex-direction:column;gap:6px;}
+.auth-label{font-size:11px;font-weight:600;color:#635c79;text-transform:uppercase;letter-spacing:.07em;}
+.auth-input{
+  width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);
+  border-radius:10px;padding:11px 14px;font-size:14px;color:#e3e0f3;
+  outline:none;transition:border-color .2s,box-shadow .2s;
+  font-family:'Inter',sans-serif;
+}
+.auth-input::placeholder{color:#3d3557;}
+.auth-input:focus{border-color:rgba(124,58,237,0.5);box-shadow:0 0 0 3px rgba(124,58,237,0.1);}
+.auth-input-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.auth-error{font-size:12px;color:#fca5a5;min-height:16px;margin-top:-4px;}
+.auth-submit-btn{
+  width:100%;background:linear-gradient(135deg,#7c3aed,#5b21b6);
+  color:#fff;font-size:14px;font-weight:700;padding:14px;
+  border:none;border-radius:12px;cursor:pointer;
+  transition:all .25s;position:relative;overflow:hidden;
+  font-family:'Inter',sans-serif;margin-top:4px;
+}
+.auth-submit-btn::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,#9f5fff,#7c3aed);opacity:0;transition:opacity .2s;}
+.auth-submit-btn:hover::before{opacity:1;}
+.auth-submit-btn:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(124,58,237,.45);}
+.auth-submit-btn:disabled{opacity:.5;cursor:not-allowed;transform:none;}
+.auth-submit-btn span{position:relative;z-index:1;}
+})();
+</script>
+
+<!-- Affiliate Tracking -->
+<script>
+(function() {
+  const params = new URLSearchParams(window.location.search);
+  const refCode = params.get('ref');
+  if (refCode) {
+    localStorage.setItem('f4u_ref', refCode);
+  }
+})();
+</script>
+
+</body>
+</html>

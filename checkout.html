@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Checkout — Fundings4U</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{min-height:100%;background:#050510;font-family:'Inter',sans-serif;color:#e3e0f3;overflow-x:hidden}
+
+/* Background */
+.bg-layer{position:fixed;inset:0;z-index:0;pointer-events:none}
+.bg-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,0.02) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.02) 1px,transparent 1px);background-size:44px 44px}
+.bg-orb1{position:absolute;width:600px;height:600px;border-radius:50%;background:radial-gradient(circle,rgba(124,58,237,0.12),transparent 70%);top:-150px;right:-100px}
+.bg-orb2{position:absolute;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,rgba(60,20,160,0.08),transparent 70%);bottom:-100px;left:-100px}
+
+/* Layout */
+.page{position:relative;z-index:10;min-height:100vh;display:flex;flex-direction:column}
+
+/* Nav */
+.nav{height:60px;display:flex;align-items:center;justify-content:space-between;padding:0 40px;border-bottom:1px solid rgba(255,255,255,0.05);background:rgba(5,5,16,0.8);backdrop-filter:blur(20px);position:sticky;top:0;z-index:50}
+.nav-logo{font-family:'Hanken Grotesk',sans-serif;font-size:20px;font-weight:800;color:#e3e0f3;text-decoration:none;letter-spacing:-0.04em}
+.nav-logo span{color:#c4b5fd}
+.nav-steps{display:flex;align-items:center;gap:8px;font-size:11px;color:#6b6280}
+.nav-step{display:flex;align-items:center;gap:6px;color:#6b6280}
+.nav-step.done{color:#4ade80}
+.nav-step.active{color:#c4b5fd}
+.nav-step-num{width:20px;height:20px;border-radius:50%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700}
+.nav-step.done .nav-step-num{background:#4ade80;border-color:#4ade80;color:#000}
+.nav-step.active .nav-step-num{background:rgba(124,58,237,0.3);border-color:#7c3aed;color:#c4b5fd}
+.nav-step-divider{width:24px;height:1px;background:rgba(255,255,255,0.1)}
+
+/* Main content */
+.main{flex:1;display:grid;grid-template-columns:1fr 430px;gap:48px;max-width:1140px;margin:0 auto;width:100%;padding:48px 24px 80px}
+
+/* Left: Order Summary */
+.order-section{padding-right:20px}
+.section-eyebrow{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:#635c79;margin-bottom:8px}
+.section-title{font-family:'Hanken Grotesk',sans-serif;font-size:28px;font-weight:800;color:#e3e0f3;letter-spacing:-0.03em;margin-bottom:32px;line-height:1.2}
+
+/* Plan card */
+.plan-card{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:16px;padding:24px;margin-bottom:20px;position:relative;overflow:hidden}
+.plan-card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(124,58,237,0.06),transparent);pointer-events:none}
+.plan-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(124,58,237,0.15);border:1px solid rgba(124,58,237,0.25);border-radius:20px;padding:4px 12px;font-size:10px;font-weight:700;color:#c4b5fd;text-transform:uppercase;letter-spacing:.07em;margin-bottom:16px}
+.plan-header{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:20px}
+.plan-size{font-family:'Hanken Grotesk',sans-serif;font-size:36px;font-weight:800;color:#e3e0f3;letter-spacing:-0.04em;line-height:1}
+.plan-price-wrap{text-align:right}
+.plan-price-label{font-size:10px;color:#635c79;font-weight:600;text-transform:uppercase;letter-spacing:.06em}
+.plan-price{font-family:'JetBrains Mono',monospace;font-size:32px;font-weight:700;color:#c4b5fd;line-height:1.1}
+.plan-divider{height:1px;background:rgba(255,255,255,0.06);margin:16px 0}
+.plan-features{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.plan-feature{display:flex;align-items:center;gap:8px;font-size:12px;color:#9b93ae}
+.plan-feature-icon{width:18px;height:18px;border-radius:50%;background:rgba(74,222,128,0.1);border:1px solid rgba(74,222,128,0.2);display:flex;align-items:center;justify-content:center;font-size:9px;color:#4ade80;flex-shrink:0}
+
+/* Price summary */
+.price-summary{background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);border-radius:12px;padding:16px;margin-bottom:20px}
+.price-row-item{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:#9b93ae;padding:6px 0}
+.price-row-item.total{border-top:1px solid rgba(255,255,255,0.07);margin-top:8px;padding-top:14px;color:#e3e0f3;font-weight:700;font-size:15px}
+.price-row-item.total .val{color:#c4b5fd;font-family:'JetBrains Mono',monospace;font-size:18px}
+
+/* Perks list */
+.perks{background:rgba(74,222,128,0.04);border:1px solid rgba(74,222,128,0.1);border-radius:12px;padding:16px;margin-bottom:20px}
+.perks-title{font-size:10px;font-weight:700;color:#4ade80;text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px}
+.perk-item{display:flex;align-items:center;gap:10px;font-size:12px;color:#9b93ae;padding:5px 0}
+.perk-check{color:#4ade80;font-size:13px;flex-shrink:0}
+
+/* Trust badges */
+.trust-row{display:flex;gap:12px;flex-wrap:wrap}
+.trust-badge{display:flex;align-items:center;gap:7px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:8px 14px;font-size:11px;color:#6b6280}
+.trust-badge-icon{font-size:15px}
+
+/* Right: Widget Panel */
+.widget-panel{display:flex;flex-direction:column;align-items:center;height:fit-content;position:sticky;top:80px}
+
+/* Widget wrapper */
+.widget-wrap{width:410px;height:696px;border-radius:20px;overflow:hidden;border:1px solid rgba(124,58,237,0.25);box-shadow:0 0 60px rgba(124,58,237,0.12),0 0 0 1px rgba(255,255,255,0.04);position:relative;background:#0a0818}
+
+.widget-wrap iframe{width:410px;height:696px;border:none;display:block}
+
+/* Loading overlay */
+.widget-loading{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0a0818;gap:16px;z-index:5}
+.widget-loading-spinner{width:40px;height:40px;border:3px solid rgba(124,58,237,0.2);border-top-color:#7c3aed;border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.widget-loading-text{font-size:13px;color:#635c79}
+
+/* Widget not found */
+.widget-unavailable{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;background:#0a0818;gap:12px;text-align:center;padding:32px}
+.widget-unavailable-icon{font-size:48px;opacity:.4}
+.widget-unavailable-title{font-size:16px;font-weight:700;color:#6b6280}
+.widget-unavailable-desc{font-size:13px;color:#4a4360;line-height:1.6}
+
+/* Powered by */
+.powered-by{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:14px;font-size:11px;color:#4a4360}
+.np-badge{background:rgba(0,163,255,0.1);border:1px solid rgba(0,163,255,0.2);border-radius:6px;padding:4px 10px;font-size:10px;font-weight:700;color:#00a3ff;letter-spacing:.05em}
+
+/* Success state */
+.success-state{display:none;text-align:center;padding:40px 20px}
+.success-icon{font-size:64px;margin-bottom:20px;animation:popIn .5s cubic-bezier(0.34,1.56,0.64,1)}
+@keyframes popIn{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
+.success-title{font-family:'Hanken Grotesk',sans-serif;font-size:26px;font-weight:800;color:#4ade80;margin-bottom:8px}
+.success-desc{font-size:14px;color:#9b93ae;margin-bottom:28px;line-height:1.6}
+.success-btn{display:inline-block;background:rgba(74,222,128,0.1);border:1px solid rgba(74,222,128,0.25);color:#4ade80;font-size:13px;font-weight:600;padding:12px 28px;border-radius:10px;cursor:pointer;text-decoration:none;transition:all .2s}
+.success-btn:hover{background:rgba(74,222,128,0.18)}
+
+/* No plan state */
+.no-plan-state{text-align:center;padding:80px 20px}
+.no-plan-icon{font-size:48px;margin-bottom:16px;opacity:.4}
+.no-plan-title{font-size:18px;font-weight:700;color:#6b6280;margin-bottom:8px}
+
+/* Responsive */
+@media(max-width:960px){
+  .main{grid-template-columns:1fr;padding:32px 20px 80px;gap:32px}
+  .order-section{padding-right:0}
+  .widget-panel{position:static;width:100%;align-items:center}
+  .widget-wrap{width:100%;max-width:410px}
+  .nav{padding:0 20px}
+  .nav-steps{display:none}
+}
+@media(max-width:440px){
+  .widget-wrap{width:100%;height:720px}
+  .widget-wrap iframe{width:100%;height:720px}
+}
+</style>
+</head>
+<body>
+<div class="bg-layer">
+  <div class="bg-grid"></div>
+  <div class="bg-orb1"></div>
+  <div class="bg-orb2"></div>
+</div>
+
+<div class="page">
+  <!-- Nav -->
+  <nav class="nav">
+    <a class="nav-logo" href="/">Fundings<span>4U</span></a>
+    <div class="nav-steps">
+      <div class="nav-step done" id="step-plan">
+        <div class="nav-step-num">✓</div>
+        <span>Choose Plan</span>
+      </div>
+      <div class="nav-step-divider"></div>
+      <div class="nav-step done" id="step-account">
+        <div class="nav-step-num">✓</div>
+        <span>Create Account</span>
+      </div>
+      <div class="nav-step-divider"></div>
+      <div class="nav-step active" id="step-pay">
+        <div class="nav-step-num">3</div>
+        <span>Payment</span>
+      </div>
+    </div>
+    <div style="font-size:12px;color:#635c79;cursor:pointer" onclick="window.location.href='/dashboard'">← Dashboard</div>
+  </nav>
+
+  <!-- Main -->
+  <div class="main" id="mainGrid">
+
+    <!-- Left: Order Summary -->
+    <div class="order-section" id="orderSection">
+      <div class="section-eyebrow">Secure Checkout</div>
+      <div class="section-title">Review your<br>trading account</div>
+
+      <!-- Plan Card -->
+      <div class="plan-card">
+        <div class="plan-badge" id="planBadge">⚡ 2 Step Evaluation</div>
+        <div class="plan-header">
+          <div>
+            <div style="font-size:11px;color:#635c79;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Account Capital</div>
+            <div class="plan-size" id="planSize">$100K</div>
+          </div>
+          <div class="plan-price-wrap">
+            <div class="plan-price-label">One-time Fee</div>
+            <div class="plan-price" id="planPrice">$399</div>
+          </div>
+        </div>
+        <div class="plan-divider"></div>
+        <div class="plan-features" id="planFeatures">
+          <div class="plan-feature"><div class="plan-feature-icon">✓</div><span id="feat-dd">4% Daily Drawdown</span></div>
+          <div class="plan-feature"><div class="plan-feature-icon">✓</div><span id="feat-max">8% Max Drawdown</span></div>
+          <div class="plan-feature"><div class="plan-feature-icon">✓</div><span>News Trading Allowed</span></div>
+          <div class="plan-feature"><div class="plan-feature-icon">✓</div><span>Weekend Holding</span></div>
+          <div class="plan-feature"><div class="plan-feature-icon">✓</div><span id="feat-phase">No Consistency Rule</span></div>
+          <div class="plan-feature"><div class="plan-feature-icon">✓</div><span>Up to 95% Profit Split</span></div>
+        </div>
+      </div>
+
+      <!-- Price Summary -->
+      <div class="price-summary">
+        <div class="price-row-item">
+          <span>Account Size</span>
+          <span class="val" id="summarySize">—</span>
+        </div>
+        <div class="price-row-item">
+          <span>Challenge Type</span>
+          <span class="val" id="summaryType">—</span>
+        </div>
+        <div class="price-row-item">
+          <span>Platform Fee</span>
+          <span class="val" style="color:#9b93ae">$0.00</span>
+        </div>
+        <div class="price-row-item total">
+          <span>Total Due</span>
+          <span class="val" id="summaryPrice">—</span>
+        </div>
+      </div>
+
+      <!-- Perks -->
+      <div class="perks">
+        <div class="perks-title">🎁 What you get</div>
+        <div class="perk-item"><span class="perk-check">✓</span> Instant MT5 credentials after setup</div>
+        <div class="perk-item"><span class="perk-check">✓</span> Real-time trading dashboard</div>
+        <div class="perk-item"><span class="perk-check">✓</span> Automated violation monitoring</div>
+        <div class="perk-item"><span class="perk-check">✓</span> Weekly profit payouts</div>
+        <div class="perk-item"><span class="perk-check">✓</span> Dedicated trader support</div>
+      </div>
+
+      <!-- Trust -->
+      <div class="trust-row">
+        <div class="trust-badge"><span class="trust-badge-icon">🔒</span> SSL Encrypted</div>
+        <div class="trust-badge"><span class="trust-badge-icon">⚡</span> Instant Confirmation</div>
+        <div class="trust-badge"><span class="trust-badge-icon">🛡️</span> Secure Crypto Payment</div>
+      </div>
+    </div>
+
+    <!-- Right: NOWPayments Widget -->
+    <div class="widget-panel">
+
+      <!-- Success state -->
+      <div class="success-state" id="successState">
+        <div class="success-icon">🎉</div>
+        <div class="success-title">Payment Confirmed!</div>
+        <div class="success-desc">Your account is being set up by our team.<br>You'll receive a notification as soon as your<br><strong style="color:#e3e0f3">MT5 credentials are ready</strong> to start trading.</div>
+        <a class="success-btn" href="/dashboard">Go to Dashboard →</a>
+      </div>
+
+      <!-- Widget wrap -->
+      <div class="widget-wrap" id="widgetWrap">
+        <!-- Loading state -->
+        <div class="widget-loading" id="widgetLoading">
+          <div class="widget-loading-spinner"></div>
+          <div class="widget-loading-text">Loading payment widget…</div>
+        </div>
+
+        <!-- Unavailable state -->
+        <div class="widget-unavailable" id="widgetUnavailable">
+          <div class="widget-unavailable-icon">🔧</div>
+          <div class="widget-unavailable-title">Widget Coming Soon</div>
+          <div class="widget-unavailable-desc">The payment widget for this plan is not yet configured.<br>Please contact support or choose a different account size.</div>
+          <a href="/#pricing" style="margin-top:16px;background:rgba(124,58,237,0.15);border:1px solid rgba(124,58,237,0.3);color:#c4b5fd;font-size:13px;font-weight:600;padding:10px 24px;border-radius:10px;text-decoration:none">← Choose Another Plan</a>
+        </div>
+
+        <!-- iframe injected here by JS -->
+        <div id="widgetIframeContainer"></div>
+      </div>
+
+      <div class="powered-by">
+        Powered by <div class="np-badge">NOWPayments</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- No plan fallback -->
+  <div id="noPlanState" class="no-plan-state" style="display:none">
+    <div class="no-plan-icon">🛒</div>
+    <div class="no-plan-title">No plan selected</div>
+    <div style="color:#4a4360;font-size:13px;margin-bottom:24px">Please choose an account size from our pricing page first.</div>
+    <a href="/#pricing" style="background:rgba(124,58,237,0.15);border:1px solid rgba(124,58,237,0.3);color:#c4b5fd;font-size:13px;font-weight:600;padding:12px 28px;border-radius:10px;text-decoration:none">← View Plans</a>
+  </div>
+</div>
+
+<script>
+// ── Auth guard ──────────────────────────────────────────────
+const token = localStorage.getItem('f4u_token');
+if (!token) { window.location.href = '/login'; }
+
+// ── Plan labels / rules ─────────────────────────────────────
+const typeLabels   = { '2step': '2 Step Evaluation', 'instant': 'Instant Funded', 'unlimited': 'Unlimited Try' };
+const typeBadgeIcons = { '2step': '⚡', 'instant': '🚀', 'unlimited': '♾️' };
+const typeDDMap    = { '2step': '4%', 'instant': '4%', 'unlimited': '5%' };
+const typeMaxMap   = { '2step': '8%', 'instant': '8%', 'unlimited': '10%' };
+
+// ── NOWPayments Widget IID Map ──────────────────────────────
+// Format: widgetMap[plan_type][account_size] = 'iid'
+const widgetMap = {
+  '2step': {
+    '$5K':   '6109078381',
+    '$25K':  '5333672564',
+    '$50K':  '5770936274',
+    '$100K': '5803017350'
+  },
+  'instant': {
+    '$5K':  '6010849890',
+    '$25K': '5335501189',
+    '$50K': '4360189898'
+  },
+  'unlimited': {
+    '$5K':   '6132484799',
+    '$25K':  '6392607079',
+    '$50K':  '5838409807',
+    '$150K': '5087494547'
+  }
+};
+
+// ── Success page check ──────────────────────────────────────
+const isSuccess = window.location.pathname.includes('/success');
+if (isSuccess) {
+  document.getElementById('successState').style.display = 'block';
+  document.getElementById('widgetWrap').style.display   = 'none';
+  document.getElementById('mainGrid').style.display = 'none';
+  // Show centered success
+  document.getElementById('mainGrid').insertAdjacentElement('afterend', document.getElementById('successState'));
+  document.getElementById('successState').style.cssText = 'display:block;text-align:center;padding:80px 20px';
+  localStorage.removeItem('f4u_pending_plan');
+}
+
+// ── Load plan ───────────────────────────────────────────────
+function loadPlan() {
+  const raw = localStorage.getItem('f4u_pending_plan');
+  if (!raw) {
+    document.getElementById('mainGrid').style.display = 'none';
+    document.getElementById('noPlanState').style.display = 'block';
+    return;
+  }
+
+  const plan = JSON.parse(raw);
+  const label = typeLabels[plan.plan_type] || plan.plan_type;
+  const icon  = typeBadgeIcons[plan.plan_type] || '⚡';
+
+  // Populate left side
+  document.getElementById('planBadge').textContent    = `${icon} ${label}`;
+  document.getElementById('planSize').textContent     = plan.account_size;
+  document.getElementById('planPrice').textContent    = `$${plan.price_usd}`;
+  document.getElementById('feat-dd').textContent      = `${typeDDMap[plan.plan_type] || '4%'} Daily Drawdown`;
+  document.getElementById('feat-max').textContent     = `${typeMaxMap[plan.plan_type] || '8%'} Max Drawdown`;
+  document.getElementById('summarySize').textContent  = plan.account_size;
+  document.getElementById('summaryType').textContent  = label;
+  document.getElementById('summaryPrice').textContent = `$${plan.price_usd}`;
+
+  if (plan.plan_type === 'instant') {
+    document.getElementById('feat-phase').textContent = 'No Phase 2 Required';
+  }
+
+  // ── Inject widget ─────────────────────────────────────────
+  const sizes = widgetMap[plan.plan_type] || {};
+  const iid   = sizes[plan.account_size];
+
+  const loading     = document.getElementById('widgetLoading');
+  const unavailable = document.getElementById('widgetUnavailable');
+  const container   = document.getElementById('widgetIframeContainer');
+
+  if (!iid) {
+    // No widget configured for this combo yet
+    loading.style.display     = 'none';
+    unavailable.style.display = 'flex';
+    return;
+  }
+
+  // Build iframe
+  const iframe = document.createElement('iframe');
+  iframe.src         = `https://nowpayments.io/embeds/payment-widget?iid=${iid}`;
+  iframe.width       = '410';
+  iframe.height      = '696';
+  iframe.frameBorder = '0';
+  iframe.scrolling   = 'no';
+  iframe.style.cssText = 'overflow-y:hidden;display:block;border:none;width:410px;height:696px';
+  iframe.title       = 'NOWPayments Payment Widget';
+
+  // Hide loader once iframe fires load event
+  iframe.addEventListener('load', () => {
+    loading.style.display = 'none';
+  });
+
+  // Fallback: hide loader after 8s anyway
+  setTimeout(() => { loading.style.display = 'none'; }, 8000);
+
+  container.appendChild(iframe);
+}
+
+if (!isSuccess) loadPlan();
+</script>
+</body>
+</html>
