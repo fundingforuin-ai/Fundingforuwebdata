@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const path = require('path');
 const db = require('./db');
+const emailService = require('./email');
 
 const app = express();
 const PORT = 3000;
@@ -72,6 +73,9 @@ app.post('/api/signup', async (req, res) => {
         );
       } catch (err) { console.error('Failed to save referral', err); }
     }
+    
+    // Send Welcome Email (Non-blocking)
+    emailService.sendWelcomeEmail(email, full_name).catch(e => console.error('Welcome email failed:', e));
     
     const token = jwt.sign({ id: userId, email, role }, JWT_SECRET, { expiresIn: '7d' });
     res.json({ token, user: { id: userId, full_name, email, role } });
@@ -174,6 +178,15 @@ app.post('/api/admin/assign-account', authMiddleware, adminOnly, async (req, res
         [user_id, mt5_login, mt5_password, mt5_server, account_size, challenge_type, 'active']
       );
     }
+
+    // Get user details for email
+    const { rows: userRows } = await db.query('SELECT full_name, email FROM users WHERE id = $1', [user_id]);
+    if (userRows.length > 0) {
+      const u = userRows[0];
+      // Send Account Provisioned Email (Non-blocking)
+      emailService.sendAccountProvisionedEmail(u.email, u.full_name, challenge_type, '$' + account_size.toLocaleString(), mt5_login, mt5_password, mt5_server).catch(e => console.error('Provision email failed:', e));
+    }
+
     res.json({ success: true });
   } catch (error) {
     console.error(error);
@@ -237,6 +250,14 @@ app.post('/api/metrics/push', async (req, res) => {
             'INSERT INTO alerts (user_id, trading_account_id, title, message) VALUES ($1, $2, $3, $4)',
             [account.user_id, trading_account_id, 'Rule Violation: Drawdown Limit Hit', reason]
           );
+
+          // Get user details for email
+          const { rows: userRows } = await db.query('SELECT full_name, email FROM users WHERE id = $1', [account.user_id]);
+          if (userRows.length > 0) {
+            const u = userRows[0];
+            // Send Violation Email (Non-blocking)
+            emailService.sendViolationEmail(u.email, u.full_name, '$' + accSize.toLocaleString(), reason).catch(e => console.error('Violation email failed:', e));
+          }
         }
       }
     }
