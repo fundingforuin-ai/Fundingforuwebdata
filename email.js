@@ -31,11 +31,13 @@ const getBaseStyles = () => `
   <style>
     body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #F8FAFC; color: #0F172A; margin: 0; padding: 0; }
     .container { max-width: 650px; margin: 0 auto; background-color: #FFFFFF; }
-    .header { background-color: #000000; padding: 25px 30px; text-align: left; }
+    .header { background-color: #000000; padding: 20px 30px; display: table; width: 100%; box-sizing: border-box; }
+    .header-left { display: table-cell; vertical-align: middle; }
+    .header-right { display: table-cell; text-align: right; vertical-align: middle; }
     .header h1 { color: #FFFFFF; margin: 0; font-size: 20px; font-weight: 500; letter-spacing: 2px; }
-    .hero { background-color: #111111; color: #FFFFFF; text-align: center; position: relative; overflow: hidden; padding-bottom: 30px; }
-    .hero img { width: 100%; height: auto; max-width: 400px; margin-top: 20px; }
-    .hero-title { font-size: 42px; font-weight: 300; letter-spacing: 6px; margin: 20px 0 10px 0; }
+    .header img { height: 60px; width: auto; border-radius: 8px; }
+    .hero { background-color: #111111; color: #FFFFFF; text-align: center; position: relative; overflow: hidden; padding: 40px 0 50px 0; }
+    .hero-title { font-size: 42px; font-weight: 300; letter-spacing: 6px; margin: 0 0 10px 0; }
     .hero-subtitle { font-size: 32px; font-weight: 800; background-color: #FFFFFF; color: #000000; display: inline-block; padding: 8px 24px; border-radius: 8px; margin-bottom: 20px; }
     .hero-tagline { font-size: 16px; color: #A1A1AA; font-weight: 400; padding: 12px 30px; background-color: rgba(0,0,0,0.5); border-radius: 20px; display: inline-block; }
     .content { padding: 50px 40px; text-align: center; }
@@ -64,7 +66,12 @@ module.exports = {
       <body>
         <div class="container">
           <div class="header">
-            <h1>FUNDINGS 4U</h1>
+            <div class="header-left">
+              <h1>FUNDINGS 4U</h1>
+            </div>
+            <div class="header-right">
+              <img src="https://fundings4u.com/email-hero.png" alt="Logo" />
+            </div>
           </div>
           
           <div class="hero">
@@ -72,8 +79,6 @@ module.exports = {
             <div class="hero-subtitle">FUNDINGS 4U</div>
             <br>
             <div class="hero-tagline">Your Skill, Our Capital</div>
-            <br>
-            <img src="https://fundings4u.com/email-hero.png" alt="Premium Trading Capital" />
           </div>
 
           <div class="content">
