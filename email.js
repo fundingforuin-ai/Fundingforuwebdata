@@ -29,22 +29,26 @@ const sendEmail = async (to, subject, htmlContent) => {
 
 const getBaseStyles = () => `
   <style>
-    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #0B0E14; color: #E2E8F0; margin: 0; padding: 0; }
-    .container { max-width: 600px; margin: 40px auto; background-color: #121822; border: 1px solid #1E293B; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
-    .header { background: linear-gradient(135deg, #6366F1 0%, #3B82F6 100%); padding: 30px; text-align: center; }
-    .header h1 { color: #FFFFFF; margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -0.5px; }
-    .content { padding: 40px; }
-    .content p { font-size: 16px; line-height: 1.6; color: #CBD5E1; margin-bottom: 20px; }
-    .content strong { color: #F8FAFC; }
-    .btn { display: inline-block; background: linear-gradient(135deg, #6366F1 0%, #3B82F6 100%); color: #FFFFFF !important; text-decoration: none; padding: 14px 28px; border-radius: 8px; font-weight: 600; margin-top: 10px; margin-bottom: 20px; text-align: center; }
-    .footer { background-color: #0B0E14; padding: 20px; text-align: center; font-size: 13px; color: #64748B; border-top: 1px solid #1E293B; }
-    .footer a { color: #3B82F6; text-decoration: none; }
-    .credentials-box { background-color: #0F131A; border: 1px solid #3B82F6; border-radius: 8px; padding: 20px; margin: 25px 0; }
-    .credentials-box p { margin: 10px 0; font-family: monospace; font-size: 15px; color: #94A3B8; }
-    .credentials-box span { color: #6366F1; font-weight: 700; }
-    .alert-box { background-color: rgba(239, 68, 68, 0.1); border: 1px solid #EF4444; border-radius: 8px; padding: 20px; margin: 25px 0; }
-    .alert-box h3 { color: #EF4444; margin-top: 0; }
-    .alert-box p { color: #FCA5A5; margin-bottom: 0; }
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #F8FAFC; color: #0F172A; margin: 0; padding: 0; }
+    .container { max-width: 650px; margin: 0 auto; background-color: #FFFFFF; }
+    .header { background-color: #000000; padding: 25px 30px; text-align: left; }
+    .header h1 { color: #FFFFFF; margin: 0; font-size: 20px; font-weight: 500; letter-spacing: 2px; }
+    .hero { background-color: #111111; color: #FFFFFF; text-align: center; position: relative; overflow: hidden; padding-bottom: 30px; }
+    .hero img { width: 100%; height: auto; max-width: 400px; margin-top: 20px; }
+    .hero-title { font-size: 42px; font-weight: 300; letter-spacing: 6px; margin: 20px 0 10px 0; }
+    .hero-subtitle { font-size: 32px; font-weight: 800; background-color: #FFFFFF; color: #000000; display: inline-block; padding: 8px 24px; border-radius: 8px; margin-bottom: 20px; }
+    .hero-tagline { font-size: 16px; color: #A1A1AA; font-weight: 400; padding: 12px 30px; background-color: rgba(0,0,0,0.5); border-radius: 20px; display: inline-block; }
+    .content { padding: 50px 40px; text-align: center; }
+    .content h2 { font-size: 28px; font-weight: 800; margin-top: 0; margin-bottom: 25px; color: #000000; }
+    .content p { font-size: 15px; line-height: 1.6; color: #334155; margin-bottom: 20px; text-align: left; }
+    .highlight { background-color: #FEF08A; padding: 2px 6px; font-weight: 600; color: #000000; }
+    .separator { border-top: 1px solid #E2E8F0; margin: 40px 0; }
+    .support-box { background-color: #FEF08A; display: inline-block; padding: 8px 16px; font-weight: 700; font-size: 18px; margin-bottom: 20px; color: #000000; }
+    .content-footer { text-align: left; margin-top: 30px; font-size: 15px; color: #334155; }
+    .footer { background-color: #000000; padding: 30px; text-align: left; color: #FFFFFF; font-size: 13px; display: table; width: 100%; box-sizing: border-box; }
+    .footer-left { display: table-cell; vertical-align: middle; font-weight: bold; font-size: 18px; letter-spacing: 2px; }
+    .footer-right { display: table-cell; text-align: right; vertical-align: middle; }
+    .footer-right a { color: #FFFFFF; text-decoration: none; margin-left: 15px; font-size: 16px; }
   </style>
 `;
 
@@ -60,27 +64,53 @@ module.exports = {
       <body>
         <div class="container">
           <div class="header">
-            <h1>Welcome to Fundings4U 🚀</h1>
+            <h1>FUNDINGS 4U</h1>
           </div>
+          
+          <div class="hero">
+            <div class="hero-title">WELCOME</div>
+            <div class="hero-subtitle">FUNDINGS 4U</div>
+            <br>
+            <div class="hero-tagline">Your Skill, Our Capital</div>
+            <br>
+            <img src="https://fundings4u.com/email-hero.png" alt="Premium Trading Capital" />
+          </div>
+
           <div class="content">
-            <p>Hi <strong>${name}</strong>,</p>
-            <p>Welcome to the elite club! Your account at Fundings4U has been successfully created. We provide the capital, you provide the skill.</p>
-            <p>You can now access your dashboard to purchase challenges, track your progress, and manage your payouts.</p>
-            <center>
-              <a href="https://fundings4u.com/login" class="btn">Go to Dashboard</a>
-            </center>
-            <p>If you have any questions or need assistance, our support team is always here to help.</p>
-            <p>Best Regards,<br><strong>The Fundings4U Team</strong></p>
+            <h2>Made By Traders For Traders</h2>
+            
+            <p>Looking to get funded as a trader? <span class="highlight">Fundings 4U</span> is the best place to start. We offer the best services to traders and aim to build the best community of funded traders. If you have what it takes to be among the best, <span class="highlight">Fundings 4U</span> is the recipe for success.</p>
+            
+            <p>Over the next few days we'll send you a short series of emails to help you get started. We look forward to helping you close the gap between practice and theory.</p>
+            
+            <div class="separator"></div>
+            
+            <div style="text-align: center;">
+              <div class="support-box">Fundings 4U</div>
+            </div>
+            
+            <p>If you require additional assistance, our support team is always available to help at <a href="mailto:support@fundings4u.com" style="color: #000000; font-weight: 500;">support@fundings4u.com</a> or through the support page on the website.</p>
+            
+            <div class="content-footer">
+              Kind regards,<br>
+              <span class="highlight">Fundings 4U</span> Team
+            </div>
           </div>
+          
           <div class="footer">
-            &copy; ${new Date().getFullYear()} Fundings4U. All rights reserved.<br>
-            <a href="https://fundings4u.com/help-center">Help Center</a> | <a href="https://fundings4u.com/trading-rules">Trading Rules</a>
+            <div class="footer-left">FUNDINGS 4U</div>
+            <div class="footer-right">
+              <a href="#">Discord</a>
+              <a href="#">Insta</a>
+              <a href="#">YT</a>
+              <a href="#">X</a>
+            </div>
           </div>
         </div>
       </body>
       </html>
     `;
-    return sendEmail(to, 'Welcome to Fundings4U! 🚀', html);
+    return sendEmail(to, 'Welcome to Fundings 4U! 🚀', html);
   },
 
   sendAccountProvisionedEmail: async (to, name, planType, accountSize, mt5Login, mt5Password, mt5Server) => {
