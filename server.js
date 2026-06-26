@@ -74,8 +74,10 @@ app.post('/api/signup', async (req, res) => {
       } catch (err) { console.error('Failed to save referral', err); }
     }
     
-    // Send Welcome Email (Non-blocking)
-    emailService.sendWelcomeEmail(email, full_name).catch(e => console.error('Welcome email failed:', e));
+    // Send Welcome Email (Wait for it to finish so Vercel doesn't kill it)
+    try {
+      await emailService.sendWelcomeEmail(email, full_name);
+    } catch(e) { console.error('Welcome email failed:', e); }
     
     const token = jwt.sign({ id: userId, email, role }, JWT_SECRET, { expiresIn: '7d' });
     res.json({ token, user: { id: userId, full_name, email, role } });
@@ -183,8 +185,10 @@ app.post('/api/admin/assign-account', authMiddleware, adminOnly, async (req, res
     const { rows: userRows } = await db.query('SELECT full_name, email FROM users WHERE id = $1', [user_id]);
     if (userRows.length > 0) {
       const u = userRows[0];
-      // Send Account Provisioned Email (Non-blocking)
-      emailService.sendAccountProvisionedEmail(u.email, u.full_name, challenge_type, '$' + account_size.toLocaleString(), mt5_login, mt5_password, mt5_server).catch(e => console.error('Provision email failed:', e));
+      // Send Account Provisioned Email (Await to prevent Vercel freeze)
+      try {
+        await emailService.sendAccountProvisionedEmail(u.email, u.full_name, challenge_type, '$' + account_size.toLocaleString(), mt5_login, mt5_password, mt5_server);
+      } catch(e) { console.error('Provision email failed:', e); }
     }
 
     res.json({ success: true });
@@ -255,8 +259,10 @@ app.post('/api/metrics/push', async (req, res) => {
           const { rows: userRows } = await db.query('SELECT full_name, email FROM users WHERE id = $1', [account.user_id]);
           if (userRows.length > 0) {
             const u = userRows[0];
-            // Send Violation Email (Non-blocking)
-            emailService.sendViolationEmail(u.email, u.full_name, '$' + accSize.toLocaleString(), reason).catch(e => console.error('Violation email failed:', e));
+            // Send Violation Email (Await to prevent Vercel freeze)
+            try {
+              await emailService.sendViolationEmail(u.email, u.full_name, '$' + accSize.toLocaleString(), reason);
+            } catch(e) { console.error('Violation email failed:', e); }
           }
         }
       }
