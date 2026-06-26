@@ -125,14 +125,34 @@ module.exports = {
       <head>
         <meta charset="utf-8">
         ${getBaseStyles()}
+        <style>
+          .credentials-box { background-color: #F1F5F9; border: 1px solid #CBD5E1; border-radius: 8px; padding: 20px; margin: 25px 0; text-align: left; }
+          .credentials-box p { margin: 10px 0; font-family: monospace; font-size: 15px; color: #475569; }
+          .credentials-box span { color: #0F172A; font-weight: 700; }
+        </style>
       </head>
       <body>
         <div class="container">
           <div class="header">
-            <h1>Your Account is Ready ⚡️</h1>
+            <div class="header-left">
+              <h1>FUNDINGS 4U</h1>
+            </div>
+            <div class="header-right">
+              <img src="https://fundings4u.com/email-hero.png" alt="Logo" />
+            </div>
           </div>
+          
+          <div class="hero">
+            <div class="hero-title">ACCOUNT READY</div>
+            <div class="hero-subtitle">FUNDINGS 4U</div>
+            <br>
+            <div class="hero-tagline">Start Trading Now</div>
+          </div>
+
           <div class="content">
-            <p>Hi <strong>${name}</strong>,</p>
+            <h2>Your Account is Provisioned</h2>
+            
+            <p>Hi <span class="highlight">${name}</span>,</p>
             <p>Great news! Your <strong>${accountSize} ${planType}</strong> trading account has been fully provisioned and is ready to trade.</p>
             <p>Here are your MetaTrader 5 credentials. Please keep these secure:</p>
             
@@ -144,14 +164,25 @@ module.exports = {
             </div>
             
             <p>You can track all your live metrics, trades, and drawdown limits directly from your dashboard.</p>
-            <center>
-              <a href="https://fundings4u.com/dashboard" class="btn">View Dashboard</a>
-            </center>
-            <p>Good luck with your trading!</p>
-            <p>Best Regards,<br><strong>The Fundings4U Team</strong></p>
+            
+            <div class="separator"></div>
+            
+            <p>If you require additional assistance, our support team is always available to help at <a href="mailto:support@fundings4u.com" style="color: #000000; font-weight: 500;">support@fundings4u.com</a>.</p>
+            
+            <div class="content-footer">
+              Kind regards,<br>
+              <span class="highlight">Fundings 4U</span> Team
+            </div>
           </div>
+          
           <div class="footer">
-            &copy; ${new Date().getFullYear()} Fundings4U. All rights reserved.
+            <div class="footer-left">FUNDINGS 4U</div>
+            <div class="footer-right">
+              <a href="#">Discord</a>
+              <a href="#">Insta</a>
+              <a href="#">YT</a>
+              <a href="#">X</a>
+            </div>
           </div>
         </div>
       </body>
@@ -167,14 +198,33 @@ module.exports = {
       <head>
         <meta charset="utf-8">
         ${getBaseStyles()}
+        <style>
+          .hero-violation { background-color: #7F1D1D; color: #FFFFFF; text-align: center; position: relative; overflow: hidden; padding: 40px 0 50px 0; }
+          .alert-box { background-color: #FEF2F2; border: 1px solid #EF4444; border-radius: 8px; padding: 20px; margin: 25px 0; text-align: left; }
+          .alert-box h3 { color: #DC2626; margin-top: 0; font-size: 18px; }
+          .alert-box p { color: #991B1B; margin-bottom: 0; font-weight: 500; }
+        </style>
       </head>
       <body>
         <div class="container">
-          <div class="header" style="background: linear-gradient(135deg, #EF4444 0%, #B91C1C 100%);">
-            <h1>Rule Violation Alert ⚠️</h1>
+          <div class="header">
+            <div class="header-left">
+              <h1>FUNDINGS 4U</h1>
+            </div>
+            <div class="header-right">
+              <img src="https://fundings4u.com/email-hero.png" alt="Logo" />
+            </div>
           </div>
+          
+          <div class="hero-violation">
+            <div class="hero-title">RULE VIOLATION</div>
+            <div class="hero-subtitle">ACCOUNT SUSPENDED</div>
+          </div>
+
           <div class="content">
-            <p>Hi <strong>${name}</strong>,</p>
+            <h2>Account Breached</h2>
+            
+            <p>Hi <span class="highlight">${name}</span>,</p>
             <p>We are writing to inform you that your <strong>${accountSize}</strong> account has breached our risk management parameters and has been suspended.</p>
             
             <div class="alert-box">
@@ -183,19 +233,90 @@ module.exports = {
             </div>
             
             <p>We know this is disappointing, but risk management is the core of our business model. You can view the full details of the violation in your dashboard.</p>
-            <center>
-              <a href="https://fundings4u.com/dashboard" class="btn" style="background: #1E293B;">View Dashboard</a>
-            </center>
-            <p>If you believe this was an error, please reach out to our support team.</p>
-            <p>Best Regards,<br><strong>The Fundings4U Team</strong></p>
+            
+            <div class="separator"></div>
+            
+            <p>If you believe this was an error, please reach out to our support team at <a href="mailto:support@fundings4u.com" style="color: #000000; font-weight: 500;">support@fundings4u.com</a>.</p>
+            
+            <div class="content-footer">
+              Kind regards,<br>
+              <span class="highlight">Fundings 4U</span> Team
+            </div>
           </div>
+          
           <div class="footer">
-            &copy; ${new Date().getFullYear()} Fundings4U. All rights reserved.
+            <div class="footer-left">FUNDINGS 4U</div>
+            <div class="footer-right">
+              <a href="#">Discord</a>
+              <a href="#">Insta</a>
+              <a href="#">YT</a>
+              <a href="#">X</a>
+            </div>
           </div>
         </div>
       </body>
       </html>
     `;
     return sendEmail(to, `Rule Violation Alert: ${accountSize} Account Suspended ⚠️`, html);
+  },
+
+  sendPassedAccountEmail: async (to, name, accountSize) => {
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        ${getBaseStyles()}
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <div class="header-left">
+              <h1>FUNDINGS 4U</h1>
+            </div>
+            <div class="header-right">
+              <img src="https://fundings4u.com/email-hero.png" alt="Logo" />
+            </div>
+          </div>
+          
+          <div class="hero" style="background-color: #14532D;">
+            <div class="hero-title">CONGRATULATIONS</div>
+            <div class="hero-subtitle">CHALLENGE PASSED</div>
+            <br>
+            <div class="hero-tagline">Welcome to the Funded Stage</div>
+          </div>
+
+          <div class="content">
+            <h2>You Have Passed! 🎉</h2>
+            
+            <p>Hi <span class="highlight">${name}</span>,</p>
+            <p>Incredible work! You have successfully hit the profit target on your <strong>${accountSize}</strong> account without violating any drawdown rules.</p>
+            <p>We are thrilled to see your discipline and skill. You have proven that you have what it takes to be a funded trader at <span class="highlight">Fundings 4U</span>.</p>
+            <p>Our team will review your account and issue your next phase credentials shortly. Please allow up to 24-48 hours for the review process.</p>
+            
+            <div class="separator"></div>
+            
+            <p>If you require additional assistance, our support team is always available to help at <a href="mailto:support@fundings4u.com" style="color: #000000; font-weight: 500;">support@fundings4u.com</a>.</p>
+            
+            <div class="content-footer">
+              Kind regards,<br>
+              <span class="highlight">Fundings 4U</span> Team
+            </div>
+          </div>
+          
+          <div class="footer">
+            <div class="footer-left">FUNDINGS 4U</div>
+            <div class="footer-right">
+              <a href="#">Discord</a>
+              <a href="#">Insta</a>
+              <a href="#">YT</a>
+              <a href="#">X</a>
+            </div>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+    return sendEmail(to, `Congratulations! You passed your ${accountSize} Challenge 🎉`, html);
   }
 };
