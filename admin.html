@@ -53,8 +53,10 @@ tr:hover td{background:rgba(124,58,237,0.03)}
 .status-pill.none{background:rgba(255,255,255,0.05);color:#635c79}
 
 /* Action button */
-.btn-assign{background:linear-gradient(135deg,#7c3aed,#5b21b6);color:#fff;font-size:11px;font-weight:600;padding:7px 14px;border:none;border-radius:7px;cursor:pointer;transition:all .2s}
+.btn-assign{background:linear-gradient(135deg,#7c3aed,#5b21b6);color:#fff;font-size:11px;font-weight:600;padding:7px 14px;border:none;border-radius:7px;cursor:pointer;transition:all .2s; margin-right:4px;}
 .btn-assign:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(124,58,237,.35)}
+.btn-edit{background:rgba(255,255,255,0.08);color:#e3e0f3;font-size:11px;font-weight:600;padding:7px 14px;border:1px solid rgba(255,255,255,0.1);border-radius:7px;cursor:pointer;transition:all .2s}
+.btn-edit:hover{background:rgba(255,255,255,0.15)}
 
 /* Modal */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:999;display:none;align-items:center;justify-content:center;backdrop-filter:blur(6px)}
@@ -163,6 +165,22 @@ tr:hover td{background:rgba(124,58,237,0.03)}
   </div>
 </div>
 
+<!-- Edit Profile Modal -->
+<div class="modal-overlay" id="editProfileModal">
+  <div class="modal">
+    <div class="modal-title">Edit User Profile</div>
+    <div class="modal-sub" id="editProfileSub">Changing details for user</div>
+    <input type="hidden" id="editUserId"/>
+    <div class="form-group"><label>Full Name</label><input type="text" id="editFullName" placeholder="e.g. John Doe"/></div>
+    <div class="form-group"><label>Email Address</label><input type="email" id="editEmail" placeholder="e.g. user@example.com"/></div>
+    <div class="form-group"><label>New Password</label><input type="password" id="editPassword" placeholder="Leave blank to keep current password"/></div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeProfileModal()">Cancel</button>
+      <button class="btn-save" onclick="saveProfile()">Save Profile →</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -217,7 +235,10 @@ async function loadUsers() {
         <td>${u.account_size ? '$' + Number(u.account_size).toLocaleString() : '—'}</td>
         <td style="font-size:12px">${{'2step':'2 Step', 'instant':'Instant', 'unlimited':'Unlimited'}[u.challenge_type] || '—'}</td>
         <td><span class="status-pill ${u.status || 'none'}">${u.status || 'Not Assigned'}</span></td>
-        <td><button class="btn-assign" onclick="openModal(${u.id}, '${u.full_name}', '${u.mt5_login || ''}', '${u.mt5_server || ''}', ${u.account_size || 0}, '${u.challenge_type || '2step'}')">Assign / Edit</button></td>
+        <td>
+          <button class="btn-assign" onclick="openModal(${u.id}, '${u.full_name}', '${u.mt5_login || ''}', '${u.mt5_server || ''}', ${u.account_size || 0}, '${u.challenge_type || '2step'}')">Assign MT5</button>
+          <button class="btn-edit" onclick="openProfileModal(${u.id}, '${u.full_name}', '${u.email}')">Edit Profile</button>
+        </td>
       </tr>
     `).join('');
   } catch(e) { console.error(e); }
@@ -253,6 +274,36 @@ async function saveAccount() {
     showToast('Account assigned successfully!');
     loadUsers();
   } catch(e) { showToast('Error saving account', false); }
+}
+
+function openProfileModal(userId, name, email) {
+  document.getElementById('editUserId').value = userId;
+  document.getElementById('editProfileSub').textContent = 'Editing profile: ' + name;
+  document.getElementById('editFullName').value = name;
+  document.getElementById('editEmail').value = email;
+  document.getElementById('editPassword').value = '';
+  document.getElementById('editProfileModal').classList.add('show');
+}
+function closeProfileModal() { document.getElementById('editProfileModal').classList.remove('show'); }
+
+async function saveProfile() {
+  const user_id = document.getElementById('editUserId').value;
+  const full_name = document.getElementById('editFullName').value.trim();
+  const email = document.getElementById('editEmail').value.trim();
+  const new_password = document.getElementById('editPassword').value.trim();
+  if (!full_name || !email) { showToast('Name and email are required', false); return; }
+  
+  try {
+    const res = await fetch('/api/admin/edit-user', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+      body: JSON.stringify({ user_id: parseInt(user_id), full_name, email, new_password })
+    });
+    if (!res.ok) throw new Error('Failed');
+    closeProfileModal();
+    showToast('User profile updated successfully!');
+    loadUsers();
+  } catch(e) { showToast('Error updating profile', false); }
 }
 
 loadUsers();

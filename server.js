@@ -198,6 +198,30 @@ app.post('/api/admin/assign-account', authMiddleware, adminOnly, async (req, res
   }
 });
 
+// ── ADMIN: EDIT USER PROFILE ────────────────────────────────
+app.post('/api/admin/edit-user', authMiddleware, adminOnly, async (req, res) => {
+  const { user_id, full_name, email, new_password } = req.body;
+  try {
+    if (new_password) {
+      const salt = await bcrypt.genSalt(10);
+      const hash = await bcrypt.hash(new_password, salt);
+      await db.query(
+        'UPDATE users SET full_name = $1, email = $2, password_hash = $3 WHERE id = $4',
+        [full_name, email, hash, user_id]
+      );
+    } else {
+      await db.query(
+        'UPDATE users SET full_name = $1, email = $2 WHERE id = $3',
+        [full_name, email, user_id]
+      );
+    }
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error editing user:', error);
+    res.status(500).json({ error: 'Failed to update user profile.' });
+  }
+});
+
 // ── BOT: GET ACTIVE ACCOUNTS ────────────────────────────────
 app.get('/api/bot/accounts', authMiddleware, adminOnly, async (req, res) => {
   try {
