@@ -322,12 +322,8 @@ app.post('/api/giveaway/enter', authMiddleware, async (req, res) => {
       });
     }
 
-    // ── Slot limit check ──────────────────────────────────────
-    const { count: slotCount } = await _sb
-      .from('giveaway_entries')
-      .select('id', { count: 'exact', head: true })
-      .eq('draw_date', today);
-    if ((slotCount || 0) >= 25) return res.status(410).json({ error: 'All slots filled for today' });
+    // ── Entry cap (optional) ──────────────────────────────────
+    // Removing the 25 limit since we now want hundreds of entries per day and pick 25 winners from them.
 
     // ── Geo lookup from IP ────────────────────────────────────
     let geo_city = '', geo_region = '', geo_isp = '';
@@ -419,37 +415,13 @@ app.post('/api/admin/giveaway/pick-winner', authMiddleware, adminOnly, async (re
   }
 });
 
-// Admin: seed 75 fake entries
+// Admin: seed 250+ fake entries
 app.post('/api/admin/giveaway/seed-fakes', authMiddleware, adminOnly, async (req, res) => {
   const today = new Date().toISOString().split('T')[0];
-  const fakePool = [
-    ['Ahmed Al-Rashid','UAE'],['Hamza Khan','Pakistan'],['Carlos Mendez','Mexico'],
-    ['Liam O\'Brien','Ireland'],['Arjun Sharma','India'],['Sofia Novak','Poland'],
-    ['David Osei','Ghana'],['Yusuf Ibrahim','Nigeria'],['Maria Santos','Brazil'],
-    ['Alex Kowalski','Poland'],['Tariq Hussain','Pakistan'],['Elena Popescu','Romania'],
-    ['James Mwangi','Kenya'],['Fatima Al-Zahra','Morocco'],['Lucas Ferreira','Brazil'],
-    ['Andrei Ionescu','Romania'],['Mohammed Al-Farsi','Oman'],['Sarah O\'Connor','Ireland'],
-    ['Rahul Patel','India'],['Viktor Kovalev','Ukraine'],['Amina Diallo','Senegal'],
-    ['Daniel Okafor','Nigeria'],['Ivan Petrov','Bulgaria'],['Priya Nair','India'],
-    ['Omar Abdullah','Saudi Arabia'],['Anya Koroleva','Russia'],['Samuel Asante','Ghana'],
-    ['Bilal Malik','Pakistan'],['Julia Martins','Portugal'],['Kwame Asiedu','Ghana'],
-    ['Nadia Hassan','Egypt'],['Leo Müller','Germany'],['Rania Khalil','Jordan'],
-    ['Emmanuel Adjei','Ghana'],['Aisha Mohammed','Bangladesh'],['Marco Ricci','Italy'],
-    ['Zara Ahmed','UK'],['Felix Mensah','Ghana'],['Deepak Verma','India'],
-    ['Noura Al-Hamdan','Kuwait'],['Tunde Adeyemi','Nigeria'],['Carmen López','Spain'],
-    ['Vikram Singh','India'],['Layla Al-Amin','Lebanon'],['Kevin Otieno','Kenya'],
-    ['Pita Havili','Fiji'],['Amara Traoré','Ivory Coast'],['Stefan Nowak','Poland'],
-    ['Riya Desai','India'],['Musa Kone','Mali'],['Hassan Al-Mutairi','Kuwait'],
-    ['Priya Krishnan','India'],['Tomás García','Argentina'],['Amira Benali','Algeria'],
-    ['Chukwuemeka Nwachukwu','Nigeria'],['Yuki Tanaka','Japan'],['Darius Ionescu','Romania'],
-    ['Fatou Diallo','Senegal'],['Muhammad Zubair','Pakistan'],['Anastasia Petrova','Russia'],
-    ['Kwabena Mensah','Ghana'],['Nasrin Hosseini','Iran'],['Diego Vargas','Colombia'],
-    ['Chiamaka Obi','Nigeria'],['Petros Papadopoulos','Greece'],['Zainab Al-Rashidi','Iraq'],
-    ['Adebayo Ogundimu','Nigeria'],['Lena Müller','Germany'],['Siddharth Gupta','India'],
-    ['Mariam Al-Mansoori','UAE'],['Olumide Adeyinka','Nigeria'],['Wanjiku Kamau','Kenya'],
-    ['Miroslav Novák','Czech Republic'],['Thanh Nguyen','Vietnam'],['Rohan Kapoor','India'],
-    ['Fatoumata Traoré','Guinea'],['Aleksei Volkov','Russia']
-  ];
+  
+  const firsts = ['Ahmed','Hamza','Carlos','Liam','Arjun','Sofia','David','Yusuf','Maria','Alex','Tariq','Elena','James','Fatima','Lucas','Andrei','Mohammed','Sarah','Rahul','Viktor','Amina','Daniel','Ivan','Priya','Omar','Anya','Samuel','Bilal','Julia','Kwame','Nadia','Leo','Rania','Emmanuel','Aisha','Marco','Zara','Felix','Deepak','Noura','Tunde','Carmen','Vikram','Layla','Kevin','Pita','Amara','Stefan','Riya','Musa','Hassan','Tomás','Amira','Chukwuemeka','Yuki','Darius','Fatou','Muhammad','Anastasia','Kwabena','Nasrin','Diego','Chiamaka','Petros','Zainab','Adebayo','Lena','Siddharth','Mariam','Olumide','Wanjiku','Miroslav','Thanh','Rohan','Fatoumata','Aleksei'];
+  const lasts = ['Al-Rashid','Khan','Mendez','O\'Brien','Sharma','Novak','Osei','Ibrahim','Santos','Kowalski','Hussain','Popescu','Mwangi','Al-Zahra','Ferreira','Ionescu','Al-Farsi','O\'Connor','Patel','Kovalev','Diallo','Okafor','Petrov','Nair','Abdullah','Koroleva','Asante','Malik','Martins','Asiedu','Hassan','Müller','Khalil','Adjei','Mohammed','Ricci','Ahmed','Mensah','Verma','Al-Hamdan','Adeyemi','López','Singh','Al-Amin','Otieno','Havili','Traoré','Nowak','Desai','Kone','Al-Mutairi','Krishnan','García','Benali','Nwachukwu','Tanaka','Zubair','Petrova','Hosseini','Vargas','Obi','Papadopoulos','Al-Rashidi','Ogundimu','Gupta','Al-Mansoori','Adeyinka','Kamau','Nguyen','Kapoor','Volkov'];
+  const countries = ['UAE','Pakistan','Mexico','Ireland','India','Poland','Ghana','Nigeria','Brazil','Romania','Kenya','Morocco','Oman','Ukraine','Senegal','Bulgaria','Saudi Arabia','Russia','Portugal','Egypt','Germany','Jordan','Bangladesh','Italy','UK','Kuwait','Spain','Lebanon','Fiji','Ivory Coast','Mali','Argentina','Algeria','Japan','Iran','Colombia','Greece','Iraq','Czech Republic','Vietnam'];
 
   try {
     const { count: current } = await _sb
@@ -457,30 +429,36 @@ app.post('/api/admin/giveaway/seed-fakes', authMiddleware, adminOnly, async (req
       .select('id', { count: 'exact', head: true })
       .eq('draw_date', today);
 
-    const needed = Math.max(0, 19 - (current || 0)); // Keep 19 fakes to leave 6 real slots out of 25
-    if (needed === 0) return res.json({ success: true, inserted: 0, message: 'Already at 19+ slots' });
+    const needed = Math.max(0, 250 - (current || 0)); // Keep ~250 fakes active
+    if (needed === 0) return res.json({ success: true, inserted: 0, message: 'Already at 250+ entries' });
 
-    // Shuffle pool and take what we need
-    const shuffled = fakePool.sort(() => Math.random() - 0.5).slice(0, needed);
-
-    // Spread fake entries across the day with random timestamps
     const dayStart = new Date(today + 'T00:00:00Z').getTime();
     const now = Date.now();
-    const toInsert = shuffled.map(([name, country]) => {
+    const toInsert = [];
+
+    for (let i = 0; i < needed; i++) {
+      const fn = firsts[Math.floor(Math.random() * firsts.length)];
+      const ln = lasts[Math.floor(Math.random() * lasts.length)];
+      const country = countries[Math.floor(Math.random() * countries.length)];
       const randomTime = new Date(dayStart + Math.random() * (now - dayStart));
-      return {
+      
+      toInsert.push({
         user_id: null,
-        full_name: name,
-        email: name.toLowerCase().replace(/[^a-z]/g, '') + Math.floor(Math.random() * 9000 + 1000) + '@gmail.com',
+        full_name: `${fn} ${ln}`,
+        email: fn.toLowerCase() + ln.toLowerCase().replace(/[^a-z]/g, '') + Math.floor(Math.random() * 9000 + 1000) + '@gmail.com',
         country,
         draw_date: today,
         is_fake: true,
         created_at: randomTime.toISOString()
-      };
-    });
+      });
+    }
 
-    const { error } = await _sb.from('giveaway_entries').insert(toInsert);
-    if (error) throw new Error(error.message);
+    // Insert in batches of 50 to avoid Supabase limits
+    for (let i = 0; i < toInsert.length; i += 50) {
+      const batch = toInsert.slice(i, i + 50);
+      const { error } = await _sb.from('giveaway_entries').insert(batch);
+      if (error) throw new Error(error.message);
+    }
 
     res.json({ success: true, inserted: toInsert.length });
   } catch (e) {
