@@ -715,6 +715,7 @@ app.get('/faq', (req, res) => res.sendFile(path.join(__dirname, 'faq.html')));
 app.get('/trading-rules', (req, res) => res.sendFile(path.join(__dirname, 'trading-rules.html')));
 app.get('/payout-guide', (req, res) => res.sendFile(path.join(__dirname, 'payout-guide.html')));
 app.get('/partner', (req, res) => res.sendFile(path.join(__dirname, 'partner.html')));
+app.get('/giveaway', (req, res) => res.sendFile(path.join(__dirname, 'giveaway.html')));
 
 app.get('/checkout', (req, res) => res.sendFile(path.join(__dirname, 'checkout.html')));
 app.get('/checkout/success', (req, res) => res.sendFile(path.join(__dirname, 'checkout.html')));
