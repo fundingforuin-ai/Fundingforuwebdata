@@ -268,9 +268,13 @@ app.get('/api/giveaway/today', async (req, res) => {
 
 // Auth required: enter giveaway — one entry per day per user
 app.post('/api/giveaway/enter', authMiddleware, async (req, res) => {
-  const { country } = req.body;
+  const { country, device_fingerprint, prize_tier } = req.body;
   const userId = req.user.id;
   const today = new Date().toISOString().split('T')[0];
+
+  // Extract real IP (Vercel sets x-forwarded-for)
+  const ip = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim();
+  const userAgent = req.headers['user-agent'] || '';
 
   try {
     // Get user info
@@ -278,27 +282,82 @@ app.post('/api/giveaway/enter', authMiddleware, async (req, res) => {
     if (!userData) return res.status(404).json({ error: 'User not found' });
     const { full_name, email } = userData;
 
-    // Check if already entered today
-    const { data: existing } = await _sb
+    // ── FRAUD CHECKS ──────────────────────────────────────────
+
+    // 1. Already entered by this user account today
+    const { data: existingUser } = await _sb
       .from('giveaway_entries')
       .select('id')
       .eq('user_id', userId)
       .eq('draw_date', today)
       .eq('is_fake', false)
       .maybeSingle();
-    if (existing) return res.status(409).json({ error: 'Already entered today' });
+    if (existingUser) return res.status(409).json({ error: 'Already entered today' });
 
-    // Check slot limit
+    // 2. Same IP address already used today (one entry per IP)
+    if (ip && ip !== '::1' && ip !== '127.0.0.1') {
+      const { data: existingIp } = await _sb
+        .from('giveaway_entries')
+        .select('id, full_name')
+        .eq('ip_address', ip)
+        .eq('draw_date', today)
+        .eq('is_fake', false)
+        .maybeSingle();
+      if (existingIp) return res.status(409).json({
+        error: `This IP address has already been used to enter today's draw. One entry per location per day.`
+      });
+    }
+
+    // 3. Same device fingerprint already used today
+    if (device_fingerprint) {
+      const { data: existingFp } = await _sb
+        .from('giveaway_entries')
+        .select('id')
+        .eq('device_fingerprint', device_fingerprint)
+        .eq('draw_date', today)
+        .eq('is_fake', false)
+        .maybeSingle();
+      if (existingFp) return res.status(409).json({
+        error: `This device has already been used to enter today's draw.`
+      });
+    }
+
+    // ── Slot limit check ──────────────────────────────────────
     const { count: slotCount } = await _sb
       .from('giveaway_entries')
       .select('id', { count: 'exact', head: true })
       .eq('draw_date', today);
-    if ((slotCount || 0) >= 100) return res.status(410).json({ error: 'All slots filled for today' });
+    if ((slotCount || 0) >= 25) return res.status(410).json({ error: 'All slots filled for today' });
 
+    // ── Geo lookup from IP ────────────────────────────────────
+    let geo_city = '', geo_region = '', geo_isp = '';
+    try {
+      if (ip && ip !== '::1' && ip !== '127.0.0.1') {
+        const geoRes = await fetch(`https://ipapi.co/${ip}/json/`);
+        if (geoRes.ok) {
+          const geoData = await geoRes.json();
+          geo_city   = geoData.city || '';
+          geo_region = geoData.region || '';
+          geo_isp    = geoData.org || '';
+        }
+      }
+    } catch(e) { /* geo lookup is best-effort */ }
+
+    // ── Insert entry ──────────────────────────────────────────
     const { error: insertErr } = await _sb.from('giveaway_entries').insert({
-      user_id: userId, full_name, email,
-      country: country || 'Unknown',
-      draw_date: today, is_fake: false
+      user_id: userId,
+      full_name,
+      email,
+      country: country || geo_city || 'Unknown',
+      draw_date: today,
+      is_fake: false,
+      ip_address: ip,
+      device_fingerprint: device_fingerprint || null,
+      user_agent: userAgent.substring(0, 300),
+      geo_city,
+      geo_region,
+      geo_isp,
+      prize_tier: prize_tier || '$5,000'
     });
     if (insertErr) throw new Error(insertErr.message);
 
@@ -316,7 +375,7 @@ app.get('/api/admin/giveaway/entries', authMiddleware, adminOnly, async (req, re
 
     const { data: entries } = await _sb
       .from('giveaway_entries')
-      .select('id, full_name, email, country, is_winner, created_at')
+      .select('id, full_name, email, country, is_winner, created_at, ip_address, device_fingerprint, geo_city, geo_region, geo_isp, prize_tier, user_agent')
       .eq('draw_date', today)
       .eq('is_fake', false)
       .order('created_at', { ascending: false });
@@ -339,21 +398,18 @@ app.post('/api/admin/giveaway/pick-winner', authMiddleware, adminOnly, async (re
     const { data: entry } = await _sb.from('giveaway_entries').select('*').eq('id', entry_id).single();
     if (!entry) return res.status(404).json({ error: 'Entry not found' });
 
-    // Mark as winner
     await _sb.from('giveaway_entries').update({ is_winner: true }).eq('id', entry_id);
 
-    // Insert into winners table
     await _sb.from('giveaway_winners').insert({
       user_id: entry.user_id,
       full_name: entry.full_name,
       country: entry.country,
-      account_size: '$5,000',
+      account_size: entry.prize_tier || '$5,000',
       draw_date: entry.draw_date
     });
 
-    // Send winner email
     try {
-      await emailService.sendGiveawayWinnerEmail(entry.email, entry.full_name);
+      await emailService.sendGiveawayWinnerEmail(entry.email, entry.full_name, entry.prize_tier || '$5,000');
     } catch(e) { console.error('Winner email failed:', e); }
 
     res.json({ success: true });
@@ -363,10 +419,10 @@ app.post('/api/admin/giveaway/pick-winner', authMiddleware, adminOnly, async (re
   }
 });
 
-// Admin: seed fake entries
+// Admin: seed 75 fake entries
 app.post('/api/admin/giveaway/seed-fakes', authMiddleware, adminOnly, async (req, res) => {
   const today = new Date().toISOString().split('T')[0];
-  const fakeNames = [
+  const fakePool = [
     ['Ahmed Al-Rashid','UAE'],['Hamza Khan','Pakistan'],['Carlos Mendez','Mexico'],
     ['Liam O\'Brien','Ireland'],['Arjun Sharma','India'],['Sofia Novak','Poland'],
     ['David Osei','Ghana'],['Yusuf Ibrahim','Nigeria'],['Maria Santos','Brazil'],
@@ -383,7 +439,16 @@ app.post('/api/admin/giveaway/seed-fakes', authMiddleware, adminOnly, async (req
     ['Noura Al-Hamdan','Kuwait'],['Tunde Adeyemi','Nigeria'],['Carmen López','Spain'],
     ['Vikram Singh','India'],['Layla Al-Amin','Lebanon'],['Kevin Otieno','Kenya'],
     ['Pita Havili','Fiji'],['Amara Traoré','Ivory Coast'],['Stefan Nowak','Poland'],
-    ['Riya Desai','India'],['Musa Kone','Mali']
+    ['Riya Desai','India'],['Musa Kone','Mali'],['Hassan Al-Mutairi','Kuwait'],
+    ['Priya Krishnan','India'],['Tomás García','Argentina'],['Amira Benali','Algeria'],
+    ['Chukwuemeka Nwachukwu','Nigeria'],['Yuki Tanaka','Japan'],['Darius Ionescu','Romania'],
+    ['Fatou Diallo','Senegal'],['Muhammad Zubair','Pakistan'],['Anastasia Petrova','Russia'],
+    ['Kwabena Mensah','Ghana'],['Nasrin Hosseini','Iran'],['Diego Vargas','Colombia'],
+    ['Chiamaka Obi','Nigeria'],['Petros Papadopoulos','Greece'],['Zainab Al-Rashidi','Iraq'],
+    ['Adebayo Ogundimu','Nigeria'],['Lena Müller','Germany'],['Siddharth Gupta','India'],
+    ['Mariam Al-Mansoori','UAE'],['Olumide Adeyinka','Nigeria'],['Wanjiku Kamau','Kenya'],
+    ['Miroslav Novák','Czech Republic'],['Thanh Nguyen','Vietnam'],['Rohan Kapoor','India'],
+    ['Fatoumata Traoré','Guinea'],['Aleksei Volkov','Russia']
   ];
 
   try {
@@ -392,20 +457,30 @@ app.post('/api/admin/giveaway/seed-fakes', authMiddleware, adminOnly, async (req
       .select('id', { count: 'exact', head: true })
       .eq('draw_date', today);
 
-    const needed = Math.max(0, 50 - (current || 0));
-    const toInsert = fakeNames.slice(0, needed).map(([name, country]) => ({
-      user_id: null,
-      full_name: name,
-      email: name.toLowerCase().replace(/[^a-z]/g,'') + Math.floor(Math.random()*9000+1000) + '@gmail.com',
-      country,
-      draw_date: today,
-      is_fake: true
-    }));
+    const needed = Math.max(0, 19 - (current || 0)); // Keep 19 fakes to leave 6 real slots out of 25
+    if (needed === 0) return res.json({ success: true, inserted: 0, message: 'Already at 19+ slots' });
 
-    if (toInsert.length > 0) {
-      const { error } = await _sb.from('giveaway_entries').insert(toInsert);
-      if (error) throw new Error(error.message);
-    }
+    // Shuffle pool and take what we need
+    const shuffled = fakePool.sort(() => Math.random() - 0.5).slice(0, needed);
+
+    // Spread fake entries across the day with random timestamps
+    const dayStart = new Date(today + 'T00:00:00Z').getTime();
+    const now = Date.now();
+    const toInsert = shuffled.map(([name, country]) => {
+      const randomTime = new Date(dayStart + Math.random() * (now - dayStart));
+      return {
+        user_id: null,
+        full_name: name,
+        email: name.toLowerCase().replace(/[^a-z]/g, '') + Math.floor(Math.random() * 9000 + 1000) + '@gmail.com',
+        country,
+        draw_date: today,
+        is_fake: true,
+        created_at: randomTime.toISOString()
+      };
+    });
+
+    const { error } = await _sb.from('giveaway_entries').insert(toInsert);
+    if (error) throw new Error(error.message);
 
     res.json({ success: true, inserted: toInsert.length });
   } catch (e) {

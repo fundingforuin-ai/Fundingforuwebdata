@@ -149,7 +149,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:18px 40px;display:fl
 <section class="hero-section">
   <div class="badge">🎰 Daily Free Account Draw — Live Now</div>
   <h1 class="hero-title">Win a Free<br><span class="gold">$5,000</span><br>Funded Account</h1>
-  <p class="hero-subtitle">100 slots available every day. One lucky trader wins a fully funded 2-Step evaluation account — no purchase required.</p>
+  <p class="hero-subtitle">25 slots available every day. One lucky trader wins a fully funded 2-Step evaluation account — no purchase required.</p>
 
   <!-- Countdown -->
   <div class="countdown-wrap">
@@ -165,7 +165,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:18px 40px;display:fl
   <div class="slots-wrap">
     <div class="slots-header">
       <div class="slots-label">🔥 Today's Slots</div>
-      <div class="slots-count"><span id="slotFilled">—</span> / 100</div>
+      <div class="slots-count"><span id="slotFilled">—</span> / 25</div>
     </div>
     <div class="progress-track"><div class="progress-bar" id="progressBar" style="width:0%"></div></div>
     <div class="slots-sub" id="slotsRemaining">Loading...</div>
@@ -217,17 +217,17 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:18px 40px;display:fl
   <div class="trust-grid">
     <div class="trust-item">
       <div class="t-icon">🎰</div>
-      <div class="t-val">100</div>
+      <div class="t-val">25</div>
       <div class="t-label">Daily Slots Available</div>
     </div>
     <div class="trust-item">
       <div class="t-icon">💰</div>
-      <div class="t-val">$5,000</div>
+      <div class="t-val" style="font-size:24px;margin-top:4px">$5K - $150K</div>
       <div class="t-label">Free Account Value</div>
     </div>
     <div class="trust-item">
       <div class="t-icon">🏆</div>
-      <div class="t-val" id="totalWinners">—</div>
+      <div class="t-val" id="totalWinners">250+</div>
       <div class="t-label">Total Winners To Date</div>
     </div>
   </div>
@@ -284,16 +284,15 @@ async function loadData() {
     const { slotCount, winners, feed } = await res.json();
 
     // Slots
-    const filled = Math.min(slotCount, 100);
+    const filled = Math.min(slotCount, 25);
     document.getElementById('slotFilled').textContent = filled;
-    document.getElementById('progressBar').style.width = (filled / 100 * 100) + '%';
-    const remaining = 100 - filled;
+    document.getElementById('progressBar').style.width = (filled / 25 * 100) + '%';
+    const remaining = 25 - filled;
     document.getElementById('slotsRemaining').textContent = remaining > 0
       ? `${remaining} slots remaining — grab yours now!`
       : 'All slots filled for today. Check back tomorrow!';
 
-    // Winners total
-    document.getElementById('totalWinners').textContent = winners.length + '+';
+    // Winners total is hardcoded to 250+ so we skip updating it here
 
     // Live feed
     const feedEl = document.getElementById('liveFeed');
@@ -373,6 +372,14 @@ async function buildEntryForm() {
         <option value="Other">Other</option>
       </select>
     </div>
+    <div class="form-group">
+      <label>Desired Account Size</label>
+      <select id="entryTier">
+        <option value="$5,000 Unlimited">$5,000 Unlimited</option>
+        <option value="$50,000">$50,000</option>
+        <option value="$150,000">$150,000</option>
+      </select>
+    </div>
     <button class="btn-enter" id="enterBtn" onclick="submitEntry()">
       🎰 Claim My Slot — Enter Draw
     </button>
@@ -383,14 +390,21 @@ async function buildEntryForm() {
 async function submitEntry() {
   const btn = document.getElementById('enterBtn');
   const country = document.getElementById('entryCountry')?.value || 'Unknown';
+  const prize_tier = document.getElementById('entryTier')?.value || '$5,000 Unlimited';
   btn.disabled = true;
   btn.textContent = 'Entering draw...';
+
+  // Generate a basic device fingerprint
+  let fp = 'unknown';
+  try {
+    fp = btoa(navigator.userAgent + screen.width + screen.height + new Date().getTimezoneOffset());
+  } catch(e){}
 
   try {
     const res = await fetch('/api/giveaway/enter', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-      body: JSON.stringify({ country })
+      body: JSON.stringify({ country, prize_tier, device_fingerprint: fp })
     });
     const data = await res.json();
 
@@ -402,8 +416,8 @@ async function submitEntry() {
     } else if (res.status === 410) {
       document.getElementById('entryContent').innerHTML = `
         <div class="already-entered" style="border-color:rgba(251,191,36,0.3);color:#fbbf24;background:rgba(251,191,36,0.08)">
-          ⏰ All 100 slots for today are filled!<br/>
-          <span style="font-weight:400;font-size:12px;margin-top:6px;display:block">Check back tomorrow at midnight for 100 fresh slots.</span>
+          ⏰ All 25 slots for today are filled!<br/>
+          <span style="font-weight:400;font-size:12px;margin-top:6px;display:block">Check back tomorrow at midnight for 25 fresh slots.</span>
         </div>
       `;
     } else if (!res.ok) {
