@@ -222,6 +222,174 @@ app.post('/api/admin/edit-user', authMiddleware, adminOnly, async (req, res) => 
   }
 });
 
+// ════════════════════════════════════════════════════════════
+// ── GIVEAWAY SYSTEM ─────────────────────────────────────────
+// ════════════════════════════════════════════════════════════
+
+// Public: get today's stats + recent winners
+app.get('/api/giveaway/today', async (req, res) => {
+  try {
+    const today = new Date().toISOString().split('T')[0];
+
+    // Total slot count today (real + fake)
+    const { rows: countRows } = await db.query(
+      'SELECT COUNT(*) as cnt FROM giveaway_entries WHERE draw_date = $1', [today]
+    );
+    const slotCount = parseInt(countRows[0]?.cnt || 0);
+
+    // Past winners (last 30)
+    const { rows: winners } = await db.query(
+      'SELECT full_name, country, account_size, draw_date FROM giveaway_winners ORDER BY draw_date DESC LIMIT 30'
+    );
+
+    // Recent entries for live feed (last 10, no emails)
+    const { rows: feed } = await db.query(
+      `SELECT full_name, country, created_at FROM giveaway_entries
+       WHERE draw_date = $1 ORDER BY created_at DESC LIMIT 10`, [today]
+    );
+
+    res.json({ slotCount, winners, feed });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Public (auth required): enter giveaway — one entry per day per user
+app.post('/api/giveaway/enter', authMiddleware, async (req, res) => {
+  const { country } = req.body;
+  const userId = req.user.id;
+  const today = new Date().toISOString().split('T')[0];
+
+  try {
+    // Get user info
+    const { rows: userRows } = await db.query('SELECT full_name, email FROM users WHERE id = $1', [userId]);
+    if (!userRows.length) return res.status(404).json({ error: 'User not found' });
+    const { full_name, email } = userRows[0];
+
+    // Check if already entered today
+    const { rows: existing } = await db.query(
+      'SELECT id FROM giveaway_entries WHERE user_id = $1 AND draw_date = $2 AND is_fake = FALSE',
+      [userId, today]
+    );
+    if (existing.length > 0) return res.status(409).json({ error: 'Already entered today' });
+
+    // Check slot limit (100 per day including fakes)
+    const { rows: countRows } = await db.query(
+      'SELECT COUNT(*) as cnt FROM giveaway_entries WHERE draw_date = $1', [today]
+    );
+    if (parseInt(countRows[0].cnt) >= 100) return res.status(410).json({ error: 'All slots filled for today' });
+
+    await db.query(
+      'INSERT INTO giveaway_entries (user_id, full_name, email, country, draw_date, is_fake) VALUES ($1,$2,$3,$4,$5,FALSE)',
+      [userId, full_name, email, country || 'Unknown', today]
+    );
+
+    res.json({ success: true, message: 'Entered successfully!' });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Admin: get today's real entries
+app.get('/api/admin/giveaway/entries', authMiddleware, adminOnly, async (req, res) => {
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    const { rows } = await db.query(
+      `SELECT id, full_name, email, country, is_winner, created_at
+       FROM giveaway_entries
+       WHERE draw_date = $1 AND is_fake = FALSE
+       ORDER BY created_at DESC`, [today]
+    );
+    const { rows: countRows } = await db.query(
+      'SELECT COUNT(*) as cnt FROM giveaway_entries WHERE draw_date = $1', [today]
+    );
+    res.json({ entries: rows, totalSlots: parseInt(countRows[0].cnt) });
+  } catch (e) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Admin: pick a winner
+app.post('/api/admin/giveaway/pick-winner', authMiddleware, adminOnly, async (req, res) => {
+  const { entry_id } = req.body;
+  try {
+    const { rows: entryRows } = await db.query(
+      'SELECT * FROM giveaway_entries WHERE id = $1', [entry_id]
+    );
+    if (!entryRows.length) return res.status(404).json({ error: 'Entry not found' });
+    const entry = entryRows[0];
+
+    // Mark as winner
+    await db.query('UPDATE giveaway_entries SET is_winner = TRUE WHERE id = $1', [entry_id]);
+
+    // Insert into winners table
+    await db.query(
+      'INSERT INTO giveaway_winners (user_id, full_name, country, account_size, draw_date) VALUES ($1,$2,$3,$4,$5)',
+      [entry.user_id, entry.full_name, entry.country, '$5,000', entry.draw_date]
+    );
+
+    // Send winner email
+    try {
+      await emailService.sendGiveawayWinnerEmail(entry.email, entry.full_name);
+    } catch(e) { console.error('Winner email failed:', e); }
+
+    res.json({ success: true });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Admin: seed fake entries up to 100 slots
+app.post('/api/admin/giveaway/seed-fakes', authMiddleware, adminOnly, async (req, res) => {
+  const today = new Date().toISOString().split('T')[0];
+  const fakeNames = [
+    ['Ahmed Al-Rashid','UAE'],['Hamza Khan','Pakistan'],['Carlos Mendez','Mexico'],
+    ['Liam O\'Brien','Ireland'],['Arjun Sharma','India'],['Sofia Novak','Poland'],
+    ['David Osei','Ghana'],['Yusuf Ibrahim','Nigeria'],['Maria Santos','Brazil'],
+    ['Alex Kowalski','Poland'],['Tariq Hussain','Pakistan'],['Elena Popescu','Romania'],
+    ['James Mwangi','Kenya'],['Fatima Al-Zahra','Morocco'],['Lucas Ferreira','Brazil'],
+    ['Andrei Ionescu','Romania'],['Mohammed Al-Farsi','Oman'],['Sarah O\'Connor','Ireland'],
+    ['Rahul Patel','India'],['Viktor Kovalev','Ukraine'],['Amina Diallo','Senegal'],
+    ['Daniel Okafor','Nigeria'],['Ivan Petrov','Bulgaria'],['Priya Nair','India'],
+    ['Omar Abdullah','Saudi Arabia'],['Anya Koroleva','Russia'],['Samuel Asante','Ghana'],
+    ['Bilal Malik','Pakistan'],['Julia Martins','Portugal'],['Kwame Asiedu','Ghana'],
+    ['Nadia Hassan','Egypt'],['Leo Müller','Germany'],['Rania Khalil','Jordan'],
+    ['Emmanuel Adjei','Ghana'],['Aisha Mohammed','Bangladesh'],['Marco Ricci','Italy'],
+    ['Zara Ahmed','UK'],['Felix Mensah','Ghana'],['Deepak Verma','India'],
+    ['Noura Al-Hamdan','Kuwait'],['Tunde Adeyemi','Nigeria'],['Carmen López','Spain'],
+    ['Vikram Singh','India'],['Layla Al-Amin','Lebanon'],['Kevin Otieno','Kenya'],
+    ['Pita Havili','Fiji'],['Amara Traoré','Ivory Coast'],['Stefan Nowak','Poland'],
+    ['Riya Desai','India'],['Musa Kone','Mali']
+  ];
+
+  try {
+    const { rows: countRows } = await db.query(
+      'SELECT COUNT(*) as cnt FROM giveaway_entries WHERE draw_date = $1', [today]
+    );
+    const current = parseInt(countRows[0].cnt);
+    const target = 50; // fill up to 50 fakes
+    const needed = Math.max(0, target - current);
+
+    let inserted = 0;
+    for (let i = 0; i < Math.min(needed, fakeNames.length); i++) {
+      const [name, country] = fakeNames[i];
+      const fakeEmail = name.toLowerCase().replace(/[^a-z]/g,'') + Math.floor(Math.random()*9000+1000) + '@gmail.com';
+      await db.query(
+        'INSERT INTO giveaway_entries (user_id, full_name, email, country, draw_date, is_fake) VALUES (NULL,$1,$2,$3,$4,TRUE)',
+        [name, fakeEmail, country, today]
+      );
+      inserted++;
+    }
+    res.json({ success: true, inserted });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 // ── BOT: GET ACTIVE ACCOUNTS ────────────────────────────────
 app.get('/api/bot/accounts', authMiddleware, adminOnly, async (req, res) => {
   try {

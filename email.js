@@ -318,5 +318,64 @@ module.exports = {
       </html>
     `;
     return sendEmail(to, `Congratulations! You passed your ${accountSize} Challenge 🎉`, html);
+  },
+
+  sendGiveawayWinnerEmail: async (to, name) => {
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        ${getBaseStyles()}
+      </head>
+      <body>
+        <div class="container">
+          <div class="header">
+            <div class="header-left">
+              <h1>FUNDINGS 4U</h1>
+            </div>
+            <div class="header-right">
+              <img src="https://fundings4u.com/email-hero.png" alt="Logo" />
+            </div>
+          </div>
+          
+          <div class="hero" style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);">
+            <div class="hero-title" style="color:#FFD700; font-size:18px; letter-spacing:4px; margin-bottom:8px;">🎰 YOU WON THE DAILY DRAW</div>
+            <div class="hero-subtitle" style="font-size:38px; letter-spacing: 4px;">$5,000</div>
+            <br>
+            <div class="hero-tagline">Free Funded Account — No Challenge Required</div>
+          </div>
+
+          <div class="content">
+            <h2>🎉 Congratulations, ${name}!</h2>
+            
+            <p>We are thrilled to inform you that you have been selected as today's winner of the <span class="highlight">Fundings 4U Daily Free Account Draw</span>!</p>
+            <p>You have won a <strong>$5,000 2-Step Evaluation Account</strong> — completely free of charge. Our team is now processing your account and you will receive your MetaTrader 5 credentials in a separate email within the next <strong>24-48 hours</strong>.</p>
+            <p>Please make sure to check both your inbox and spam folder for the account credentials email.</p>
+            
+            <div class="separator"></div>
+            
+            <p>If you have any questions, please reach out to our support team at <a href="mailto:support@fundings4u.com" style="color: #000000; font-weight: 500;">support@fundings4u.com</a>.</p>
+            
+            <div class="content-footer">
+              Kind regards,<br>
+              <span class="highlight">Fundings 4U</span> Team
+            </div>
+          </div>
+          
+          <div class="footer">
+            <div class="footer-left">FUNDINGS 4U</div>
+            <div class="footer-right">
+              <a href="#">Discord</a>
+              <a href="#">Insta</a>
+              <a href="#">YT</a>
+              <a href="#">X</a>
+            </div>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+    return sendEmail(to, `🎰 You Won! Your Free $5,000 Funded Account from Fundings 4U`, html);
   }
 };

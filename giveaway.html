@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Free $5K Funded Account Daily Draw — Fundings4U</title>
+<meta name="description" content="Enter Fundings4U's daily free funded account draw. 100 slots available. One lucky trader wins a free $5,000 2-Step funded account every day."/>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700;800;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{min-height:100%;font-family:'Inter',sans-serif;background:#06060f;color:#e8e0f8;overflow-x:hidden}
+
+/* ── Animated BG ── */
+.bg-orbs{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.orb{position:absolute;border-radius:50%;filter:blur(80px);opacity:0.12;animation:drift 18s ease-in-out infinite alternate}
+.orb1{width:600px;height:600px;background:#7c3aed;top:-200px;left:-150px;animation-delay:0s}
+.orb2{width:500px;height:500px;background:#2563eb;bottom:-100px;right:-100px;animation-delay:-6s}
+.orb3{width:350px;height:350px;background:#a855f7;top:40%;right:20%;animation-delay:-12s}
+@keyframes drift{0%{transform:translate(0,0) scale(1)}100%{transform:translate(40px,30px) scale(1.08)}}
+
+/* ── Nav ── */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:18px 40px;display:flex;align-items:center;justify-content:space-between;background:rgba(6,6,15,0.85);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,0.05)}
+.nav-logo{font-family:'Hanken Grotesk',sans-serif;font-size:22px;font-weight:800;color:#fff;text-decoration:none;letter-spacing:-0.04em}
+.nav-logo span{color:#a78bfa}
+.nav-links{display:flex;gap:8px}
+.nav-links a{color:#9d8fb8;font-size:13px;font-weight:500;text-decoration:none;padding:8px 16px;border-radius:8px;transition:all .2s}
+.nav-links a:hover{color:#fff;background:rgba(255,255,255,0.06)}
+.nav-btn{background:linear-gradient(135deg,#7c3aed,#5b21b6);color:#fff!important;border-radius:8px;font-weight:600!important}
+.nav-btn:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(124,58,237,.4)}
+
+/* ── Hero ── */
+.hero-section{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:100px 20px 60px;text-align:center}
+.badge{display:inline-flex;align-items:center;gap:8px;background:rgba(124,58,237,0.15);border:1px solid rgba(124,58,237,0.35);border-radius:100px;padding:8px 20px;font-size:13px;font-weight:600;color:#c4b5fd;margin-bottom:28px;animation:pulse-badge 3s ease infinite}
+@keyframes pulse-badge{0%,100%{box-shadow:0 0 0 0 rgba(124,58,237,0)}50%{box-shadow:0 0 0 8px rgba(124,58,237,0.1)}}
+.hero-title{font-family:'Hanken Grotesk',sans-serif;font-size:clamp(48px,8vw,90px);font-weight:900;line-height:1;letter-spacing:-0.04em;color:#fff;margin-bottom:10px}
+.hero-title .gold{background:linear-gradient(135deg,#FFD700,#FFA500);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-subtitle{font-size:clamp(18px,3vw,24px);font-weight:300;color:#9d8fb8;margin-bottom:48px;max-width:600px;line-height:1.6}
+
+/* ── Countdown ── */
+.countdown-wrap{margin-bottom:50px}
+.countdown-label{font-size:12px;font-weight:600;color:#6b5e8a;text-transform:uppercase;letter-spacing:.15em;margin-bottom:14px}
+.countdown{display:flex;gap:16px;justify-content:center;flex-wrap:wrap}
+.cd-block{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:18px 24px;min-width:90px;text-align:center}
+.cd-num{font-family:'Hanken Grotesk',sans-serif;font-size:42px;font-weight:800;color:#fff;line-height:1;display:block}
+.cd-unit{font-size:11px;color:#6b5e8a;text-transform:uppercase;letter-spacing:.1em;margin-top:6px;display:block}
+
+/* ── Slot progress ── */
+.slots-wrap{width:100%;max-width:560px;margin:0 auto 50px}
+.slots-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.slots-label{font-size:14px;font-weight:600;color:#c4b5fd}
+.slots-count{font-family:'Hanken Grotesk',sans-serif;font-size:26px;font-weight:800;color:#fff}
+.slots-count span{color:#a78bfa}
+.progress-track{height:10px;background:rgba(255,255,255,0.06);border-radius:100px;overflow:hidden;position:relative}
+.progress-bar{height:100%;background:linear-gradient(90deg,#7c3aed,#a855f7,#ec4899);border-radius:100px;transition:width 1s ease;position:relative}
+.progress-bar::after{content:'';position:absolute;right:0;top:0;height:100%;width:20px;background:rgba(255,255,255,0.4);border-radius:100px;animation:shimmer 1.5s ease infinite}
+@keyframes shimmer{0%,100%{opacity:0}50%{opacity:1}}
+.slots-sub{font-size:12px;color:#6b5e8a;margin-top:8px;text-align:right}
+
+/* ── Entry card ── */
+.entry-card{background:rgba(14,12,30,0.9);border:1px solid rgba(124,58,237,0.25);border-radius:24px;padding:40px;max-width:480px;width:100%;margin:0 auto;backdrop-filter:blur(20px);box-shadow:0 32px 80px rgba(0,0,0,0.5)}
+.entry-title{font-family:'Hanken Grotesk',sans-serif;font-size:22px;font-weight:700;margin-bottom:6px;color:#fff}
+.entry-sub{font-size:13px;color:#6b5e8a;margin-bottom:28px}
+.form-group{margin-bottom:18px;text-align:left}
+.form-group label{display:block;font-size:11px;font-weight:600;color:#8b80a8;text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px}
+.form-group input,.form-group select{width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:14px 18px;font-size:14px;color:#e8e0f8;outline:none;transition:border-color .2s;font-family:'Inter',sans-serif}
+.form-group input:focus,.form-group select:focus{border-color:rgba(124,58,237,0.5);box-shadow:0 0 0 3px rgba(124,58,237,.1)}
+.form-group select option{background:#0e0c1e}
+.btn-enter{width:100%;background:linear-gradient(135deg,#7c3aed,#5b21b6);color:#fff;font-size:15px;font-weight:700;padding:16px;border:none;border-radius:14px;cursor:pointer;transition:all .2s;font-family:'Inter',sans-serif;letter-spacing:0.02em;margin-top:6px;position:relative;overflow:hidden}
+.btn-enter:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(124,58,237,.45)}
+.btn-enter:disabled{opacity:0.6;cursor:not-allowed;transform:none}
+.btn-enter::before{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.1),transparent);transition:left 0.5s}
+.btn-enter:hover::before{left:100%}
+.already-entered{background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);border-radius:14px;padding:18px;text-align:center;color:#34d399;font-weight:600;font-size:14px}
+.login-prompt{background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.2);border-radius:14px;padding:20px;text-align:center}
+.login-prompt p{color:#9d8fb8;font-size:14px;margin-bottom:12px}
+.login-prompt a{background:linear-gradient(135deg,#7c3aed,#5b21b6);color:#fff;text-decoration:none;padding:10px 24px;border-radius:10px;font-size:13px;font-weight:600;display:inline-block;transition:all .2s}
+.login-prompt a:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(124,58,237,.35)}
+
+/* ── Live feed ── */
+.live-feed-section{position:relative;z-index:1;padding:0 20px 80px}
+.section-center{max-width:1100px;margin:0 auto}
+.section-title-wrap{text-align:center;margin-bottom:40px}
+.section-eyebrow{font-size:12px;font-weight:600;color:#7c3aed;text-transform:uppercase;letter-spacing:.15em;margin-bottom:10px}
+.section-h2{font-family:'Hanken Grotesk',sans-serif;font-size:clamp(28px,4vw,42px);font-weight:800;color:#fff;letter-spacing:-0.03em}
+.feed-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.feed-box{background:rgba(14,12,30,0.8);border:1px solid rgba(255,255,255,0.06);border-radius:20px;padding:24px;height:340px;overflow:hidden}
+.feed-box-title{font-size:12px;font-weight:600;color:#6b5e8a;text-transform:uppercase;letter-spacing:.1em;margin-bottom:18px;display:flex;align-items:center;gap:8px}
+.live-dot{width:8px;height:8px;background:#34d399;border-radius:50%;animation:blink 1.4s ease infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+.feed-list{display:flex;flex-direction:column;gap:10px}
+.feed-item{display:flex;align-items:center;gap:12px;padding:10px 14px;background:rgba(255,255,255,0.03);border-radius:10px;animation:slideIn .4s ease}
+@keyframes slideIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+.feed-avatar{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0}
+.feed-name{font-size:13px;font-weight:600;color:#e8e0f8}
+.feed-meta{font-size:11px;color:#6b5e8a;margin-top:2px}
+.feed-time{font-size:11px;color:#4a4265;margin-left:auto;white-space:nowrap}
+
+/* ── Winners board ── */
+.winner-row{display:flex;align-items:center;gap:14px;padding:12px 16px;border-radius:12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.04);margin-bottom:8px}
+.winner-trophy{font-size:20px}
+.winner-name{font-size:14px;font-weight:600;color:#e8e0f8;flex:1}
+.winner-meta{font-size:11px;color:#6b5e8a;margin-top:2px}
+.winner-prize{background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.2);border-radius:8px;padding:4px 12px;font-size:12px;font-weight:700;color:#fbbf24}
+.winner-date{font-size:11px;color:#4a4265;text-align:right}
+
+/* ── Trust strip ── */
+.trust-section{position:relative;z-index:1;padding:60px 20px;border-top:1px solid rgba(255,255,255,0.04);border-bottom:1px solid rgba(255,255,255,0.04)}
+.trust-grid{max-width:900px;margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:24px;text-align:center}
+.trust-item .t-icon{font-size:32px;margin-bottom:12px}
+.trust-item .t-val{font-family:'Hanken Grotesk',sans-serif;font-size:28px;font-weight:800;color:#fff;margin-bottom:4px}
+.trust-item .t-label{font-size:13px;color:#6b5e8a}
+
+/* ── Toast ── */
+.toast{position:fixed;bottom:24px;right:24px;background:#1a1730;border:1px solid rgba(16,185,129,.3);border-radius:12px;padding:14px 22px;font-size:13px;color:#34d399;z-index:9999;transform:translateY(20px);opacity:0;transition:all .3s;max-width:320px}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.error{border-color:rgba(239,68,68,.3);color:#f87171}
+
+@media(max-width:768px){
+  nav{padding:14px 20px}
+  .nav-links{display:none}
+  .hero-title{font-size:42px}
+  .feed-grid{grid-template-columns:1fr}
+  .trust-grid{grid-template-columns:1fr;gap:16px}
+  .countdown{gap:10px}
+  .cd-block{padding:14px 18px;min-width:70px}
+  .cd-num{font-size:32px}
+}
+</style>
+</head>
+<body>
+
+<div class="bg-orbs">
+  <div class="orb orb1"></div>
+  <div class="orb orb2"></div>
+  <div class="orb orb3"></div>
+</div>
+
+<!-- Nav -->
+<nav>
+  <a href="/" class="nav-logo">Fundings<span>4U</span></a>
+  <div class="nav-links">
+    <a href="/">Home</a>
+    <a href="/dashboard">Dashboard</a>
+    <a href="/login" class="nav-btn" id="navAuthBtn">Sign In</a>
+  </div>
+</nav>
+
+<!-- Hero Section -->
+<section class="hero-section">
+  <div class="badge">🎰 Daily Free Account Draw — Live Now</div>
+  <h1 class="hero-title">Win a Free<br><span class="gold">$5,000</span><br>Funded Account</h1>
+  <p class="hero-subtitle">100 slots available every day. One lucky trader wins a fully funded 2-Step evaluation account — no purchase required.</p>
+
+  <!-- Countdown -->
+  <div class="countdown-wrap">
+    <div class="countdown-label">Next draw closes in</div>
+    <div class="countdown">
+      <div class="cd-block"><span class="cd-num" id="cdH">00</span><span class="cd-unit">Hours</span></div>
+      <div class="cd-block"><span class="cd-num" id="cdM">00</span><span class="cd-unit">Minutes</span></div>
+      <div class="cd-block"><span class="cd-num" id="cdS">00</span><span class="cd-unit">Seconds</span></div>
+    </div>
+  </div>
+
+  <!-- Slot Progress -->
+  <div class="slots-wrap">
+    <div class="slots-header">
+      <div class="slots-label">🔥 Today's Slots</div>
+      <div class="slots-count"><span id="slotFilled">—</span> / 100</div>
+    </div>
+    <div class="progress-track"><div class="progress-bar" id="progressBar" style="width:0%"></div></div>
+    <div class="slots-sub" id="slotsRemaining">Loading...</div>
+  </div>
+
+  <!-- Entry Card -->
+  <div class="entry-card">
+    <div class="entry-title">Enter Today's Draw</div>
+    <div class="entry-sub">Register your spot — free entry, one per day</div>
+    <div id="entryContent">
+      <div class="login-prompt">
+        <p>You need to be signed in to enter the daily draw.</p>
+        <a href="/signup">Create Free Account →</a>
+        <br><br>
+        <a href="/login" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);">Already have account? Sign In</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Live Feed & Winners -->
+<section class="live-feed-section">
+  <div class="section-center">
+    <div class="section-title-wrap">
+      <div class="section-eyebrow">Transparency</div>
+      <h2 class="section-h2">Live Activity & Past Winners</h2>
+    </div>
+    <div class="feed-grid">
+      <!-- Live Entries Feed -->
+      <div class="feed-box">
+        <div class="feed-box-title"><div class="live-dot"></div> Live Entries Today</div>
+        <div class="feed-list" id="liveFeed">
+          <div style="text-align:center;color:#4a4265;padding:40px 0;font-size:13px">Loading entries...</div>
+        </div>
+      </div>
+      <!-- Winners Board -->
+      <div class="feed-box">
+        <div class="feed-box-title">🏆 Recent Winners</div>
+        <div id="winnersBoard">
+          <div style="text-align:center;color:#4a4265;padding:40px 0;font-size:13px">Loading winners...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Trust Stats -->
+<section class="trust-section">
+  <div class="trust-grid">
+    <div class="trust-item">
+      <div class="t-icon">🎰</div>
+      <div class="t-val">100</div>
+      <div class="t-label">Daily Slots Available</div>
+    </div>
+    <div class="trust-item">
+      <div class="t-icon">💰</div>
+      <div class="t-val">$5,000</div>
+      <div class="t-label">Free Account Value</div>
+    </div>
+    <div class="trust-item">
+      <div class="t-icon">🏆</div>
+      <div class="t-val" id="totalWinners">—</div>
+      <div class="t-label">Total Winners To Date</div>
+    </div>
+  </div>
+</section>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const token = localStorage.getItem('f4u_token');
+const user = JSON.parse(localStorage.getItem('f4u_user') || 'null');
+
+// Update nav
+if (token && user) {
+  const btn = document.getElementById('navAuthBtn');
+  if(btn) { btn.textContent = 'Dashboard'; btn.href = '/dashboard'; }
+}
+
+// ── Countdown to midnight IST (18:30 UTC) ──
+function updateCountdown() {
+  const now = new Date();
+  const drawTime = new Date();
+  // Draw at 8PM IST = 14:30 UTC
+  drawTime.setUTCHours(14, 30, 0, 0);
+  if (now > drawTime) drawTime.setDate(drawTime.getDate() + 1);
+  const diff = drawTime - now;
+  const h = Math.floor(diff / 3600000);
+  const m = Math.floor((diff % 3600000) / 60000);
+  const s = Math.floor((diff % 60000) / 1000);
+  document.getElementById('cdH').textContent = String(h).padStart(2,'0');
+  document.getElementById('cdM').textContent = String(m).padStart(2,'0');
+  document.getElementById('cdS').textContent = String(s).padStart(2,'0');
+}
+setInterval(updateCountdown, 1000);
+updateCountdown();
+
+// ── Avatar colors ──
+const avatarColors = ['#7c3aed','#2563eb','#db2777','#059669','#d97706','#dc2626','#7c3aed'];
+function getAvatar(name) {
+  const idx = name.charCodeAt(0) % avatarColors.length;
+  return `<div class="feed-avatar" style="background:${avatarColors[idx]}">${name.charAt(0).toUpperCase()}</div>`;
+}
+
+function timeAgo(ts) {
+  const secs = Math.floor((Date.now() - new Date(ts)) / 1000);
+  if (secs < 60) return `${secs}s ago`;
+  if (secs < 3600) return `${Math.floor(secs/60)}m ago`;
+  return `${Math.floor(secs/3600)}h ago`;
+}
+
+// ── Load public data ──
+async function loadData() {
+  try {
+    const res = await fetch('/api/giveaway/today');
+    const { slotCount, winners, feed } = await res.json();
+
+    // Slots
+    const filled = Math.min(slotCount, 100);
+    document.getElementById('slotFilled').textContent = filled;
+    document.getElementById('progressBar').style.width = (filled / 100 * 100) + '%';
+    const remaining = 100 - filled;
+    document.getElementById('slotsRemaining').textContent = remaining > 0
+      ? `${remaining} slots remaining — grab yours now!`
+      : 'All slots filled for today. Check back tomorrow!';
+
+    // Winners total
+    document.getElementById('totalWinners').textContent = winners.length + '+';
+
+    // Live feed
+    const feedEl = document.getElementById('liveFeed');
+    if (feed && feed.length > 0) {
+      feedEl.innerHTML = feed.map(f => `
+        <div class="feed-item">
+          ${getAvatar(f.full_name)}
+          <div>
+            <div class="feed-name">${f.full_name}</div>
+            <div class="feed-meta">📍 ${f.country || 'Unknown'}</div>
+          </div>
+          <div class="feed-time">${timeAgo(f.created_at)}</div>
+        </div>
+      `).join('');
+    } else {
+      feedEl.innerHTML = '<div style="text-align:center;color:#4a4265;padding:40px 0;font-size:13px">Be the first to enter today!</div>';
+    }
+
+    // Winners board
+    const boardEl = document.getElementById('winnersBoard');
+    if (winners && winners.length > 0) {
+      boardEl.innerHTML = winners.slice(0,8).map(w => `
+        <div class="winner-row">
+          <div class="winner-trophy">🏆</div>
+          <div>
+            <div class="winner-name">${w.full_name}</div>
+            <div class="winner-meta">📍 ${w.country || 'Unknown'}</div>
+          </div>
+          <div>
+            <div class="winner-prize">${w.account_size}</div>
+            <div class="winner-date">${new Date(w.draw_date).toLocaleDateString('en-GB', {day:'numeric', month:'short'})}</div>
+          </div>
+        </div>
+      `).join('');
+    } else {
+      boardEl.innerHTML = '<div style="text-align:center;color:#4a4265;padding:40px 0;font-size:13px">No winners yet. First draw coming soon!</div>';
+    }
+  } catch(e) { console.error('Failed to load giveaway data', e); }
+}
+
+// ── Build entry form ──
+async function buildEntryForm() {
+  const contentEl = document.getElementById('entryContent');
+
+  if (!token || !user) {
+    // Not logged in - show login prompt (already in HTML)
+    return;
+  }
+
+  // Check if already entered today
+  // We'll rely on the server to tell us via 409
+  contentEl.innerHTML = `
+    <div class="form-group">
+      <label>Your Name</label>
+      <input type="text" id="entryName" value="${user.full_name || ''}" readonly style="opacity:0.6"/>
+    </div>
+    <div class="form-group">
+      <label>Your Country</label>
+      <select id="entryCountry">
+        <option value="Pakistan">Pakistan</option>
+        <option value="India">India</option>
+        <option value="UAE">UAE</option>
+        <option value="Nigeria">Nigeria</option>
+        <option value="Kenya">Kenya</option>
+        <option value="Ghana">Ghana</option>
+        <option value="USA">USA</option>
+        <option value="UK">UK</option>
+        <option value="Canada">Canada</option>
+        <option value="Bangladesh">Bangladesh</option>
+        <option value="Philippines">Philippines</option>
+        <option value="Egypt">Egypt</option>
+        <option value="Saudi Arabia">Saudi Arabia</option>
+        <option value="Indonesia">Indonesia</option>
+        <option value="Malaysia">Malaysia</option>
+        <option value="Brazil">Brazil</option>
+        <option value="South Africa">South Africa</option>
+        <option value="Other">Other</option>
+      </select>
+    </div>
+    <button class="btn-enter" id="enterBtn" onclick="submitEntry()">
+      🎰 Claim My Slot — Enter Draw
+    </button>
+    <p style="text-align:center;font-size:11px;color:#4a4265;margin-top:14px">Free entry • One slot per day • Winner notified by email</p>
+  `;
+}
+
+async function submitEntry() {
+  const btn = document.getElementById('enterBtn');
+  const country = document.getElementById('entryCountry')?.value || 'Unknown';
+  btn.disabled = true;
+  btn.textContent = 'Entering draw...';
+
+  try {
+    const res = await fetch('/api/giveaway/enter', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+      body: JSON.stringify({ country })
+    });
+    const data = await res.json();
+
+    if (res.status === 409) {
+      document.getElementById('entryContent').innerHTML = `
+        <div class="already-entered">✅ You've already entered today's draw!<br/>
+        <span style="font-weight:400;font-size:12px;margin-top:6px;display:block;opacity:0.8">Come back tomorrow for another chance. Good luck in today's draw! 🤞</span></div>
+      `;
+    } else if (res.status === 410) {
+      document.getElementById('entryContent').innerHTML = `
+        <div class="already-entered" style="border-color:rgba(251,191,36,0.3);color:#fbbf24;background:rgba(251,191,36,0.08)">
+          ⏰ All 100 slots for today are filled!<br/>
+          <span style="font-weight:400;font-size:12px;margin-top:6px;display:block">Check back tomorrow at midnight for 100 fresh slots.</span>
+        </div>
+      `;
+    } else if (!res.ok) {
+      throw new Error(data.error || 'Failed');
+    } else {
+      document.getElementById('entryContent').innerHTML = `
+        <div class="already-entered">🎉 You're in! Slot secured for today's draw!<br/>
+        <span style="font-weight:400;font-size:12px;margin-top:6px;display:block;opacity:0.8">If you win, we'll email you at <strong>${user.email}</strong>. Good luck! 🤞</span></div>
+      `;
+      showToast('🎰 Entry confirmed! Good luck!');
+      loadData();
+    }
+  } catch(e) {
+    btn.disabled = false;
+    btn.textContent = '🎰 Claim My Slot — Enter Draw';
+    showToast('Error entering draw. Please try again.', true);
+  }
+}
+
+function showToast(msg, error = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast' + (error ? ' error' : '') + ' show';
+  setTimeout(() => t.classList.remove('show'), 4000);
+}
+
+buildEntryForm();
+loadData();
+setInterval(loadData, 30000);
+</script>
+</body>
+</html>

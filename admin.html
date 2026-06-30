@@ -97,8 +97,9 @@ tr:hover td{background:rgba(124,58,237,0.03)}
     <div><div class="sb-badge">ADMIN</div></div>
   </div>
   <nav class="sb-nav">
-    <div class="sb-section">Management</div>
-    <a class="sb-link active"><span class="icon">👥</span> All Traders</a>
+    <div class="sb-section" style="margin-top:12px">Management</div>
+    <a class="sb-link active" id="navTraders" onclick="showSection('traders')"><span class="icon">👥</span> All Traders</a>
+    <a class="sb-link" id="navGiveaway" onclick="showSection('giveaway')"><span class="icon">🎰</span> Daily Giveaway</a>
     <a class="sb-link"><span class="icon">📊</span> Analytics</a>
     <a class="sb-link"><span class="icon">💸</span> Payouts</a>
     <div class="sb-section" style="margin-top:12px">Bot</div>
@@ -136,6 +137,33 @@ tr:hover td{background:rgba(124,58,237,0.03)}
           <th>Trader</th><th>Email</th><th>MT5 Login</th><th>Server</th><th>Account Size</th><th>Challenge</th><th>Status</th><th>Action</th>
         </tr></thead>
         <tbody id="usersTable"><tr><td colspan="8" style="text-align:center;color:#635c79;padding:30px">Loading traders...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<!-- Giveaway Section (hidden by default) -->
+<main class="main" id="sectionGiveaway" style="display:none">
+  <div class="content">
+    <div class="admin-stats" style="grid-template-columns:repeat(3,1fr)">
+      <div class="stat-card"><div class="stat-label">Total Slots Today</div><div class="stat-val" id="gTotalSlots">—</div></div>
+      <div class="stat-card"><div class="stat-label">Real Entries</div><div class="stat-val" id="gRealEntries">—</div></div>
+      <div class="stat-card"><div class="stat-label">Today's Winner</div><div class="stat-val" id="gWinnerCount" style="font-size:18px">Not picked yet</div></div>
+    </div>
+
+    <div class="section-card">
+      <div class="section-head">
+        <div class="section-title">🎰 Today's Draw Entries</div>
+        <div style="display:flex;gap:10px">
+          <button class="btn-assign" onclick="seedFakes()" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);color:#e3e0f3">🤖 Seed Fake Data</button>
+          <button class="btn-assign" onclick="loadGiveaway()">🔄 Refresh</button>
+        </div>
+      </div>
+      <table>
+        <thead><tr>
+          <th>Trader</th><th>Email</th><th>Country</th><th>Entered At</th><th>Action</th>
+        </tr></thead>
+        <tbody id="giveawayTable"><tr><td colspan="5" style="text-align:center;color:#635c79;padding:30px">Loading entries...</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -308,6 +336,94 @@ async function saveProfile() {
 
 loadUsers();
 setInterval(loadUsers, 30000);
+
+// ── Section switcher ──
+const sectionTraders = document.querySelector('.main');
+function showSection(section) {
+  const tradersMain = document.getElementById('navTraders').closest('nav').parentElement.nextElementSibling;
+  document.getElementById('sectionGiveaway').style.display = 'none';
+  // Re-show traders main
+  document.querySelectorAll('body > main').forEach(m => {
+    if (m.id !== 'sectionGiveaway') m.style.display = '';
+  });
+  document.querySelectorAll('.sb-link').forEach(l => l.classList.remove('active'));
+
+  if (section === 'giveaway') {
+    document.querySelectorAll('body > main').forEach(m => {
+      if (m.id !== 'sectionGiveaway') m.style.display = 'none';
+    });
+    document.getElementById('sectionGiveaway').style.display = '';
+    document.getElementById('navGiveaway').classList.add('active');
+    loadGiveaway();
+  } else {
+    document.getElementById('navTraders').classList.add('active');
+  }
+}
+
+// ── Giveaway Admin ──
+async function loadGiveaway() {
+  try {
+    const res = await fetch('/api/admin/giveaway/entries', {
+      headers: { Authorization: 'Bearer ' + token }
+    });
+    const { entries, totalSlots } = await res.json();
+
+    document.getElementById('gTotalSlots').textContent = totalSlots;
+    document.getElementById('gRealEntries').textContent = entries.length;
+
+    const winners = entries.filter(e => e.is_winner);
+    document.getElementById('gWinnerCount').textContent = winners.length > 0
+      ? '🏆 ' + winners[0].full_name
+      : 'Not picked yet';
+
+    const tbody = document.getElementById('giveawayTable');
+    if (!entries.length) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#635c79;padding:30px">No real entries yet. Seed some fakes to get started!</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = entries.map(e => `
+      <tr>
+        <td><strong style="color:#e3e0f3">${e.full_name}</strong></td>
+        <td style="color:#958da1">${e.email}</td>
+        <td>${e.country || '—'}</td>
+        <td style="font-size:12px;color:#635c79">${new Date(e.created_at).toLocaleTimeString()}</td>
+        <td>
+          ${e.is_winner
+            ? '<span class="status-pill active">✅ Winner</span>'
+            : `<button class="btn-assign" onclick="pickWinner(${e.id}, '${e.full_name}')">🏆 Pick as Winner</button>`
+          }
+        </td>
+      </tr>
+    `).join('');
+  } catch(e) { console.error(e); }
+}
+
+async function pickWinner(entryId, name) {
+  if (!confirm(`Pick "${name}" as today's winner? They will be sent a winner email immediately.`)) return;
+  try {
+    const res = await fetch('/api/admin/giveaway/pick-winner', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+      body: JSON.stringify({ entry_id: entryId })
+    });
+    if (!res.ok) throw new Error('Failed');
+    showToast('🏆 Winner picked! Email sent to ' + name);
+    loadGiveaway();
+  } catch(e) { showToast('Error picking winner', false); }
+}
+
+async function seedFakes() {
+  try {
+    const res = await fetch('/api/admin/giveaway/seed-fakes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token }
+    });
+    const { inserted } = await res.json();
+    showToast(`🤖 Seeded ${inserted} fake entries!`);
+    loadGiveaway();
+  } catch(e) { showToast('Error seeding fakes', false); }
+}
 </script>
 </body>
 </html>
