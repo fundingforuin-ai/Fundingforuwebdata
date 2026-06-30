@@ -83,11 +83,14 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:18px 40px;display:fl
 .section-eyebrow{font-size:12px;font-weight:600;color:#7c3aed;text-transform:uppercase;letter-spacing:.15em;margin-bottom:10px}
 .section-h2{font-family:'Hanken Grotesk',sans-serif;font-size:clamp(28px,4vw,42px);font-weight:800;color:#fff;letter-spacing:-0.03em}
 .feed-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}
-.feed-box{background:rgba(14,12,30,0.8);border:1px solid rgba(255,255,255,0.06);border-radius:20px;padding:24px;height:340px;overflow:hidden}
+.feed-box{background:rgba(14,12,30,0.8);border:1px solid rgba(255,255,255,0.06);border-radius:20px;padding:24px;height:340px;overflow:hidden;display:flex;flex-direction:column}
 .feed-box-title{font-size:12px;font-weight:600;color:#6b5e8a;text-transform:uppercase;letter-spacing:.1em;margin-bottom:18px;display:flex;align-items:center;gap:8px}
 .live-dot{width:8px;height:8px;background:#34d399;border-radius:50%;animation:blink 1.4s ease infinite}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
-.feed-list{display:flex;flex-direction:column;gap:10px}
+.scroll-wrapper{flex:1;overflow:hidden;position:relative;margin:-10px -10px 0;padding:10px 10px 0;-webkit-mask-image:linear-gradient(to bottom,transparent,black 5%,black 95%,transparent);mask-image:linear-gradient(to bottom,transparent,black 5%,black 95%,transparent)}
+.feed-list{display:flex;flex-direction:column;gap:10px;animation:scroll-up 25s linear infinite}
+.feed-list:hover{animation-play-state:paused}
+@keyframes scroll-up{0%{transform:translateY(0)}100%{transform:translateY(-50%)}}
 .feed-item{display:flex;align-items:center;gap:12px;padding:10px 14px;background:rgba(255,255,255,0.03);border-radius:10px;animation:slideIn .4s ease}
 @keyframes slideIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
 .feed-avatar{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0}
@@ -197,15 +200,19 @@ nav{position:fixed;top:0;left:0;right:0;z-index:100;padding:18px 40px;display:fl
       <!-- Live Entries Feed -->
       <div class="feed-box">
         <div class="feed-box-title"><div class="live-dot"></div> Live Entries Today</div>
-        <div class="feed-list" id="liveFeed">
-          <div style="text-align:center;color:#4a4265;padding:40px 0;font-size:13px">Loading entries...</div>
+        <div class="scroll-wrapper">
+          <div class="feed-list" id="liveFeed">
+            <div style="text-align:center;color:#4a4265;padding:40px 0;font-size:13px">Loading entries...</div>
+          </div>
         </div>
       </div>
       <!-- Winners Board -->
       <div class="feed-box">
         <div class="feed-box-title">🏆 Recent Winners</div>
-        <div id="winnersBoard">
-          <div style="text-align:center;color:#4a4265;padding:40px 0;font-size:13px">Loading winners...</div>
+        <div class="scroll-wrapper">
+          <div class="feed-list" id="winnersBoard">
+            <div style="text-align:center;color:#4a4265;padding:40px 0;font-size:13px">Loading winners...</div>
+          </div>
         </div>
       </div>
     </div>
@@ -294,7 +301,7 @@ async function loadData() {
     // Live feed
     const feedEl = document.getElementById('liveFeed');
     if (feed && feed.length > 0) {
-      feedEl.innerHTML = feed.map(f => `
+      const itemsHtml = feed.map(f => `
         <div class="feed-item">
           ${getAvatar(f.full_name)}
           <div>
@@ -304,6 +311,7 @@ async function loadData() {
           <div class="feed-time">${timeAgo(f.created_at)}</div>
         </div>
       `).join('');
+      feedEl.innerHTML = itemsHtml + itemsHtml; // Duplicate for smooth infinite scroll
     } else {
       feedEl.innerHTML = '<div style="text-align:center;color:#4a4265;padding:40px 0;font-size:13px">Be the first to enter today!</div>';
     }
@@ -311,7 +319,7 @@ async function loadData() {
     // Winners board
     const boardEl = document.getElementById('winnersBoard');
     if (winners && winners.length > 0) {
-      boardEl.innerHTML = winners.slice(0,8).map(w => `
+      const winHtml = winners.map(w => `
         <div class="winner-row">
           <div class="winner-trophy">🏆</div>
           <div>
@@ -324,6 +332,7 @@ async function loadData() {
           </div>
         </div>
       `).join('');
+      boardEl.innerHTML = winHtml + winHtml; // Duplicate for infinite scroll
     } else {
       boardEl.innerHTML = '<div style="text-align:center;color:#4a4265;padding:40px 0;font-size:13px">No winners yet. First draw coming soon!</div>';
     }
