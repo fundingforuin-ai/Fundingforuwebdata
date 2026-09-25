@@ -88,8 +88,8 @@
 <style>
   /* ===== GLOBAL ===== */
   * { box-sizing: border-box; }
-  html { scroll-behavior: smooth; }
-  body { background-color: #050510; overflow-x: hidden; }
+  html { scroll-behavior: smooth; overflow-x: hidden; }
+  body { background-color: #050510;  }
 
   .bg-grid-pattern {
     background-image: linear-gradient(to right, rgba(255,255,255,0.03) 1px, transparent 1px),
@@ -866,7 +866,7 @@
   @media (max-width: 767px) {
 
     /* Body bottom pad so content isn't behind CTA */
-    body { padding-bottom: 88px !important; overflow-x: hidden; }
+    body { padding-bottom: 88px !important;  }
 
     /* Show mobile CTA */
     #f4u-mob-cta { display: block; }
@@ -1043,7 +1043,7 @@
 
 </style>
 </head>
-<body class="text-on-background font-body-md antialiased overflow-x-hidden relative min-h-screen">
+<body class="text-on-background font-body-md antialiased relative min-h-screen">
 
   <button class="mob-cta-btn" onclick="document.getElementById('pricing').scrollIntoView({behavior:'smooth'})">
     Start Now →
