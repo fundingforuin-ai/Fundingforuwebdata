@@ -362,6 +362,8 @@ if (isSuccess) {
 
 // ── Global Plan Data ────────────────────────────────────────
 let currentPlan = null;
+let activeCoupon = null; // { code, discount_percent }
+let basePriceUsd = 0;
 
 // ── Load plan ───────────────────────────────────────────────
 function loadPlan() {
@@ -508,8 +510,6 @@ async function loadPaymentWidget() {
 if (!isSuccess) loadPlan();
 
 // ── Coupon Logic ─────────────────────────────────────────────
-let activeCoupon = null; // { code, discount_percent }
-let basePriceUsd = 0;
 
 function setBasePrice(price) {
   basePriceUsd = price;
