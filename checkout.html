@@ -326,27 +326,7 @@ const typeBadgeIcons = { '2step': '⚡', 'instant': '🚀', 'unlimited': '♾️
 const typeDDMap    = { '2step': '4%', 'instant': '4%', 'unlimited': '5%' };
 const typeMaxMap   = { '2step': '8%', 'instant': '8%', 'unlimited': '10%' };
 
-// ── NOWPayments Widget IID Map ──────────────────────────────
-// Format: widgetMap[plan_type][account_size] = 'iid'
-const widgetMap = {
-  '2step': {
-    '$5K':   '6109078381',
-    '$25K':  '5333672564',
-    '$50K':  '5770936274',
-    '$100K': '5803017350'
-  },
-  'instant': {
-    '$5K':  '6010849890',
-    '$25K': '5335501189',
-    '$50K': '4360189898'
-  },
-  'unlimited': {
-    '$5K':   '6132484799',
-    '$25K':  '6392607079',
-    '$50K':  '5838409807',
-    '$150K': '5087494547'
-  }
-};
+// ── Dynamic Pricing via API ───────────────────────────────
 
 // ── Success page check ──────────────────────────────────────
 const isSuccess = window.location.pathname.includes('/success');
@@ -360,6 +340,9 @@ if (isSuccess) {
   localStorage.removeItem('f4u_pending_plan');
 }
 
+// ── Global Plan Data ────────────────────────────────────────
+let currentPlan = null;
+
 // ── Load plan ───────────────────────────────────────────────
 function loadPlan() {
   const raw = localStorage.getItem('f4u_pending_plan');
@@ -369,58 +352,111 @@ function loadPlan() {
     return;
   }
 
-  const plan = JSON.parse(raw);
-  const label = typeLabels[plan.plan_type] || plan.plan_type;
-  const icon  = typeBadgeIcons[plan.plan_type] || '⚡';
+  currentPlan = JSON.parse(raw);
+  const label = typeLabels[currentPlan.plan_type] || currentPlan.plan_type;
+  const icon  = typeBadgeIcons[currentPlan.plan_type] || '⚡';
 
   // Populate left side
   document.getElementById('planBadge').textContent    = `${icon} ${label}`;
-  document.getElementById('planSize').textContent     = plan.account_size;
-  document.getElementById('planPrice').textContent    = `$${plan.price_usd}`;
-  document.getElementById('feat-dd').textContent      = `${typeDDMap[plan.plan_type] || '4%'} Daily Drawdown`;
-  document.getElementById('feat-max').textContent     = `${typeMaxMap[plan.plan_type] || '8%'} Max Drawdown`;
-  document.getElementById('summarySize').textContent  = plan.account_size;
+  document.getElementById('planSize').textContent     = currentPlan.account_size;
+  document.getElementById('planPrice').textContent    = `$${currentPlan.price_usd}`;
+  document.getElementById('feat-dd').textContent      = `${typeDDMap[currentPlan.plan_type] || '4%'} Daily Drawdown`;
+  document.getElementById('feat-max').textContent     = `${typeMaxMap[currentPlan.plan_type] || '8%'} Max Drawdown`;
+  document.getElementById('summarySize').textContent  = currentPlan.account_size;
   document.getElementById('summaryType').textContent  = label;
-  document.getElementById('summaryPrice').textContent = `$${plan.price_usd}`;
+  document.getElementById('summaryPrice').textContent = `$${currentPlan.price_usd}`;
 
-  if (plan.plan_type === 'instant') {
+  if (currentPlan.plan_type === 'instant') {
     document.getElementById('feat-phase').textContent = 'No Phase 2 Required';
   }
 
-  // ── Inject widget ─────────────────────────────────────────
-  const sizes = widgetMap[plan.plan_type] || {};
-  const iid   = sizes[plan.account_size];
+  // Load the initial widget without coupon
+  loadPaymentWidget();
+}
 
+// ── Load Payment Widget dynamically via API ─────────────────
+async function loadPaymentWidget() {
+  if (!currentPlan) return;
+  
   const loading     = document.getElementById('widgetLoading');
   const unavailable = document.getElementById('widgetUnavailable');
   const container   = document.getElementById('widgetIframeContainer');
+  
+  // Show loader, clear old iframe if any
+  loading.style.display = 'flex';
+  unavailable.style.display = 'none';
+  container.innerHTML = '';
+  
+  try {
+    const payload = {
+      plan_type: currentPlan.plan_type,
+      account_size: currentPlan.account_size,
+      base_price: currentPlan.price_usd,
+      coupon_code: activeCoupon ? activeCoupon.code : null
+    };
 
-  if (!iid) {
-    // No widget configured for this combo yet
-    loading.style.display     = 'none';
-    unavailable.style.display = 'flex';
-    return;
-  }
+    const res = await fetch('/api/payment/create-invoice', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + token
+      },
+      body: JSON.stringify(payload)
+    });
+    
+    const data = await res.json();
+    
+    if (!res.ok || !data.invoice_url) {
+      console.error('Widget error:', data.error);
+      loading.style.display = 'none';
+      unavailable.style.display = 'flex';
+      document.querySelector('.widget-unavailable-desc').innerHTML = 
+        `Payment could not be initialized.<br>Make sure the API key is configured.`;
+      return;
+    }
 
-  // Build iframe
-  const iframe = document.createElement('iframe');
-  iframe.src         = `https://nowpayments.io/embeds/payment-widget?iid=${iid}`;
-  iframe.width       = '410';
-  iframe.height      = '696';
-  iframe.frameBorder = '0';
-  iframe.scrolling   = 'no';
-  iframe.style.cssText = 'overflow-y:hidden;display:block;border:none;width:410px;height:696px';
-  iframe.title       = 'NOWPayments Payment Widget';
+    // Parse the IID from the returned invoice_url (e.g. https://nowpayments.io/payment/?iid=XXXXX)
+    const urlObj = new URL(data.invoice_url);
+    const iid = urlObj.searchParams.get('iid');
+    
+    if (!iid) {
+      // If we can't extract IID, just show a button to redirect to the invoice
+      loading.style.display = 'none';
+      container.innerHTML = `
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:40px;text-align:center">
+          <div style="font-size:48px;margin-bottom:20px">💳</div>
+          <div style="font-size:20px;font-weight:700;color:#e3e0f3;margin-bottom:12px">Invoice Created</div>
+          <div style="font-size:14px;color:#9b93ae;margin-bottom:32px">Click below to proceed to the secure payment portal.</div>
+          <a href="${data.invoice_url}" class="btn-primary" style="padding:12px 32px;text-decoration:none;border-radius:10px">Proceed to Payment →</a>
+        </div>
+      `;
+      return;
+    }
 
-  // Hide loader once iframe fires load event
-  iframe.addEventListener('load', () => {
+    // Build iframe
+    const iframe = document.createElement('iframe');
+    iframe.src         = `https://nowpayments.io/embeds/payment-widget?iid=${iid}`;
+    iframe.width       = '410';
+    iframe.height      = '696';
+    iframe.frameBorder = '0';
+    iframe.scrolling   = 'no';
+    iframe.style.cssText = 'overflow-y:hidden;display:block;border:none;width:410px;height:696px';
+    iframe.title       = 'NOWPayments Payment Widget';
+
+    // Hide loader once iframe fires load event
+    iframe.addEventListener('load', () => {
+      loading.style.display = 'none';
+    });
+
+    // Fallback: hide loader after 8s anyway
+    setTimeout(() => { loading.style.display = 'none'; }, 8000);
+
+    container.appendChild(iframe);
+  } catch(e) {
+    console.error('Load widget error:', e);
     loading.style.display = 'none';
-  });
-
-  // Fallback: hide loader after 8s anyway
-  setTimeout(() => { loading.style.display = 'none'; }, 8000);
-
-  container.appendChild(iframe);
+    unavailable.style.display = 'flex';
+  }
 }
 
 if (!isSuccess) loadPlan();
@@ -516,6 +552,9 @@ function applyDiscount() {
     summary.insertBefore(discRow, totalRow);
   }
   discRow.innerHTML = `<span>Discount (${pct}%)</span><span class="val" style="color:#4ade80">-$${saving}</span>`;
+  
+  // Reload the payment widget with the new price
+  loadPaymentWidget();
 }
 
 function removeCoupon() {
@@ -540,6 +579,9 @@ function removeCoupon() {
   // Remove discount row
   const discRow = document.getElementById('discountRow');
   if (discRow) discRow.remove();
+
+  // Reload the payment widget with original price
+  loadPaymentWidget();
 }
 
 // Patch loadPlan to capture base price

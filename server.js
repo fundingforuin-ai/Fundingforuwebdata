@@ -833,6 +833,63 @@ app.post('/api/admin/coupons/toggle', authMiddleware, adminOnly, async (req, res
   } catch (e) { res.status(500).json({ error: 'Server error' }); }
 });
 
+// ════════════════════════════════════════════════════════════
+// ── NOWPAYMENTS API ─────────────────────────────────────────
+// ════════════════════════════════════════════════════════════
+
+app.post('/api/payment/create-invoice', authMiddleware, async (req, res) => {
+  const { plan_type, account_size, base_price, coupon_code } = req.body;
+  let finalPrice = base_price;
+  
+  try {
+    // 1. Verify and apply coupon if provided
+    if (coupon_code) {
+      const { data: coupon } = await _sb
+        .from('coupon_codes')
+        .select('discount_percent, is_active, max_uses, used_count')
+        .eq('code', coupon_code.toUpperCase())
+        .maybeSingle();
+
+      if (coupon && coupon.is_active && (coupon.max_uses === null || coupon.used_count < coupon.max_uses)) {
+        const saving = Math.round(base_price * coupon.discount_percent / 100);
+        finalPrice = base_price - saving;
+      }
+    }
+
+    // 2. Call NOWPayments API
+    // Ensure you have NOWPAYMENTS_API_KEY set in your Vercel Environment Variables
+    const npApiKey = process.env.NOWPAYMENTS_API_KEY || 'PLACEHOLDER_KEY';
+    
+    // We dynamically import node-fetch if running on Node < 18, but Node 18+ has fetch built-in
+    const response = await fetch('https://api.nowpayments.io/v1/invoice', {
+      method: 'POST',
+      headers: {
+        'x-api-key': npApiKey,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        price_amount: finalPrice,
+        price_currency: 'usd',
+        order_id: `ORD-${Date.now()}-${req.user.userId}`,
+        order_description: `${plan_type} - ${account_size}`,
+        success_url: 'https://fundings4u.com/checkout/success', // Will be handled on frontend
+        cancel_url: 'https://fundings4u.com/checkout'
+      })
+    });
+    
+    const data = await response.json();
+    if (!response.ok) {
+      console.error('NOWPayments error:', data);
+      return res.status(400).json({ error: data.message || 'Failed to create invoice' });
+    }
+
+    res.json({ invoice_url: data.invoice_url });
+  } catch (error) {
+    console.error('Payment API error:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
 // ── SERVE PAGES ─────────────────────────────────────────────
 
 
