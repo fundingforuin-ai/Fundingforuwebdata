@@ -257,7 +257,7 @@ html,body{min-height:100%;background:#050510;font-family:'Inter',sans-serif;colo
         <div class="perk-item"><span class="perk-check">✓</span> Instant MT5 credentials after setup</div>
         <div class="perk-item"><span class="perk-check">✓</span> Real-time trading dashboard</div>
         <div class="perk-item"><span class="perk-check">✓</span> Automated violation monitoring</div>
-        <div class="perk-item"><span class="perk-check">✓</span> Weekly profit payouts</div>
+        <div class="perk-item"><span class="perk-check">✓</span> <span id="payoutPerk">Weekly profit payouts</span></div>
         <div class="perk-item"><span class="perk-check">✓</span> Dedicated trader support</div>
       </div>
 
@@ -390,6 +390,9 @@ function loadPlan() {
 
   if (currentPlan.plan_type === 'instant') {
     document.getElementById('feat-phase').textContent = 'No Phase 2 Required';
+    document.getElementById('payoutPerk').textContent = 'Daily profit payouts';
+  } else {
+    document.getElementById('payoutPerk').textContent = 'Weekly profit payouts';
   }
 
   // Set base price from global currentPlan
