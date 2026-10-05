@@ -245,7 +245,7 @@ html,body{min-height:100%;background:#050510;font-family:'Inter',sans-serif;colo
       <div class="coupon-wrap">
         <div class="coupon-label">🏷️ Have a coupon code?</div>
         <div class="coupon-row">
-          <input class="coupon-input" id="couponInput" type="text" placeholder="Enter code e.g. F4U20" maxlength="20" onkeydown="if(event.key==='Enter') applyCoupon()"/>
+          <input class="coupon-input" id="couponInput" type="text" placeholder="Enter promo code" maxlength="20" onkeydown="if(event.key==='Enter') applyCoupon()"/>
           <button class="coupon-btn" id="couponBtn" onclick="applyCoupon()">Apply</button>
         </div>
         <div class="coupon-feedback" id="couponFeedback"></div>
@@ -326,7 +326,27 @@ const typeBadgeIcons = { '2step': '⚡', 'instant': '🚀', 'unlimited': '♾️
 const typeDDMap    = { '2step': '4%', 'instant': '4%', 'unlimited': '5%' };
 const typeMaxMap   = { '2step': '8%', 'instant': '8%', 'unlimited': '10%' };
 
-// ── Dynamic Pricing via API ───────────────────────────────
+// ── NOWPayments Widget IID Map ──────────────────────────────
+// Format: widgetMap[plan_type][account_size] = 'iid'
+const widgetMap = {
+  '2step': {
+    '$5K':   '6109078381',
+    '$25K':  '5333672564',
+    '$50K':  '5770936274',
+    '$100K': '5803017350'
+  },
+  'instant': {
+    '$5K':  '6010849890',
+    '$25K': '5335501189',
+    '$50K': '4360189898'
+  },
+  'unlimited': {
+    '$5K':   '6132484799',
+    '$25K':  '6392607079',
+    '$50K':  '5838409807',
+    '$150K': '5087494547'
+  }
+};
 
 // ── Success page check ──────────────────────────────────────
 const isSuccess = window.location.pathname.includes('/success');
@@ -370,7 +390,7 @@ function loadPlan() {
     document.getElementById('feat-phase').textContent = 'No Phase 2 Required';
   }
 
-// Set base price from global currentPlan
+  // Set base price from global currentPlan
   if (currentPlan) {
     basePriceUsd = parseFloat(currentPlan.price_usd);
   }
@@ -392,76 +412,97 @@ async function loadPaymentWidget() {
   unavailable.style.display = 'none';
   container.innerHTML = '';
   
-  try {
-    const payload = {
-      plan_type: currentPlan.plan_type,
-      account_size: currentPlan.account_size,
-      base_price: currentPlan.price_usd,
-      coupon_code: activeCoupon ? activeCoupon.code : null
-    };
+  let iid = null;
+  let fallbackUrl = null;
 
-    const res = await fetch('/api/payment/create-invoice', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + token
-      },
-      body: JSON.stringify(payload)
-    });
-    
-    const data = await res.json();
-    
-    if (!res.ok || !data.invoice_url) {
-      console.error('Widget error:', data.error);
-      loading.style.display = 'none';
-      unavailable.style.display = 'flex';
-      document.querySelector('.widget-unavailable-desc').innerHTML = 
-        `Payment could not be initialized.<br>Reason: <strong style="color:#f87171">${data.error || 'Unknown error'}</strong>`;
-      return;
-    }
-
-    // Parse the IID from the returned invoice_url (e.g. https://nowpayments.io/payment/?iid=XXXXX)
-    const urlObj = new URL(data.invoice_url);
-    const iid = urlObj.searchParams.get('iid');
+  if (!activeCoupon) {
+    // ── No coupon applied: Use static widget map ──
+    const sizes = widgetMap[currentPlan.plan_type] || {};
+    iid = sizes[currentPlan.account_size];
     
     if (!iid) {
-      // If we can't extract IID, just show a button to redirect to the invoice
       loading.style.display = 'none';
-      container.innerHTML = `
-        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:40px;text-align:center">
-          <div style="font-size:48px;margin-bottom:20px">💳</div>
-          <div style="font-size:20px;font-weight:700;color:#e3e0f3;margin-bottom:12px">Invoice Created</div>
-          <div style="font-size:14px;color:#9b93ae;margin-bottom:32px">Click below to proceed to the secure payment portal.</div>
-          <a href="${data.invoice_url}" class="btn-primary" style="padding:12px 32px;text-decoration:none;border-radius:10px">Proceed to Payment →</a>
-        </div>
-      `;
+      unavailable.style.display = 'flex';
       return;
     }
+  } else {
+    // ── Coupon applied: Generate dynamic invoice via API ──
+    try {
+      const payload = {
+        plan_type: currentPlan.plan_type,
+        account_size: currentPlan.account_size,
+        base_price: currentPlan.price_usd,
+        coupon_code: activeCoupon.code
+      };
 
-    // Build iframe
-    const iframe = document.createElement('iframe');
-    iframe.src         = `https://nowpayments.io/embeds/payment-widget?iid=${iid}`;
-    iframe.width       = '410';
-    iframe.height      = '696';
-    iframe.frameBorder = '0';
-    iframe.scrolling   = 'no';
-    iframe.style.cssText = 'overflow-y:hidden;display:block;border:none;width:410px;height:696px';
-    iframe.title       = 'NOWPayments Payment Widget';
+      const res = await fetch('/api/payment/create-invoice', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + token
+        },
+        body: JSON.stringify(payload)
+      });
+      
+      const data = await res.json();
+      
+      if (!res.ok || !data.invoice_url) {
+        console.error('Widget error:', data.error);
+        loading.style.display = 'none';
+        unavailable.style.display = 'flex';
+        document.querySelector('.widget-unavailable-desc').innerHTML = 
+          `Payment could not be initialized.<br>Reason: <strong style="color:#f87171">${data.error || 'Unknown error'}</strong>`;
+        return;
+      }
 
-    // Hide loader once iframe fires load event
-    iframe.addEventListener('load', () => {
+      // Parse the IID from the returned invoice_url (e.g. https://nowpayments.io/payment/?iid=XXXXX)
+      const urlObj = new URL(data.invoice_url);
+      iid = urlObj.searchParams.get('iid');
+      fallbackUrl = data.invoice_url;
+      
+    } catch(e) {
+      console.error('Load widget error:', e);
       loading.style.display = 'none';
-    });
-
-    // Fallback: hide loader after 8s anyway
-    setTimeout(() => { loading.style.display = 'none'; }, 8000);
-
-    container.appendChild(iframe);
-  } catch(e) {
-    console.error('Load widget error:', e);
-    loading.style.display = 'none';
-    unavailable.style.display = 'flex';
+      unavailable.style.display = 'flex';
+      return;
+    }
   }
+  
+  // If we couldn't parse the iid from dynamic URL, show fallback button
+  if (!iid && fallbackUrl) {
+    loading.style.display = 'none';
+    container.innerHTML = `
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:40px;text-align:center">
+        <div style="font-size:48px;margin-bottom:20px">💳</div>
+        <div style="font-size:20px;font-weight:700;color:#e3e0f3;margin-bottom:12px">Invoice Created</div>
+        <div style="font-size:14px;color:#9b93ae;margin-bottom:32px">Click below to proceed to the secure payment portal.</div>
+        <a href="${fallbackUrl}" class="btn-primary" style="padding:12px 32px;text-decoration:none;border-radius:10px">Proceed to Payment →</a>
+      </div>
+    `;
+    return;
+  }
+
+  if (!iid) return;
+
+  // Build iframe
+  const iframe = document.createElement('iframe');
+  iframe.src         = `https://nowpayments.io/embeds/payment-widget?iid=${iid}`;
+  iframe.width       = '410';
+  iframe.height      = '696';
+  iframe.frameBorder = '0';
+  iframe.scrolling   = 'no';
+  iframe.style.cssText = 'overflow-y:hidden;display:block;border:none;width:410px;height:696px';
+  iframe.title       = 'NOWPayments Payment Widget';
+
+  // Hide loader once iframe fires load event
+  iframe.addEventListener('load', () => {
+    loading.style.display = 'none';
+  });
+
+  // Fallback: hide loader after 8s anyway
+  setTimeout(() => { loading.style.display = 'none'; }, 8000);
+
+  container.appendChild(iframe);
 }
 
 if (!isSuccess) loadPlan();
