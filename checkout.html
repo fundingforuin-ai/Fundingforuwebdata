@@ -71,6 +71,31 @@ html,body{min-height:100%;background:#050510;font-family:'Inter',sans-serif;colo
 .trust-badge{display:flex;align-items:center;gap:7px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:8px 14px;font-size:11px;color:#6b6280}
 .trust-badge-icon{font-size:15px}
 
+/* Coupon */
+.coupon-wrap{margin-bottom:20px}
+.coupon-label{font-size:11px;font-weight:600;color:#635c79;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.coupon-row{display:flex;gap:8px}
+.coupon-input{flex:1;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:12px 16px;font-size:13px;color:#e3e0f3;font-family:'Inter',sans-serif;outline:none;letter-spacing:.08em;text-transform:uppercase;transition:border-color .2s}
+.coupon-input::placeholder{text-transform:none;letter-spacing:0;color:#4a4360}
+.coupon-input:focus{border-color:rgba(124,58,237,0.5);box-shadow:0 0 0 3px rgba(124,58,237,.08)}
+.coupon-input.success{border-color:rgba(74,222,128,0.5);background:rgba(74,222,128,0.04)}
+.coupon-input.error{border-color:rgba(239,68,68,0.5);background:rgba(239,68,68,0.04);animation:shake .4s ease}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.coupon-btn{background:rgba(124,58,237,0.2);border:1px solid rgba(124,58,237,0.35);color:#c4b5fd;font-size:12px;font-weight:700;padding:12px 18px;border-radius:10px;cursor:pointer;white-space:nowrap;transition:all .2s;font-family:'Inter',sans-serif}
+.coupon-btn:hover{background:rgba(124,58,237,0.35)}
+.coupon-btn:disabled{opacity:0.5;cursor:not-allowed}
+.coupon-feedback{margin-top:8px;font-size:12px;display:none}
+.coupon-feedback.success{color:#4ade80;display:flex;align-items:center;gap:6px}
+.coupon-feedback.error{color:#f87171;display:flex;align-items:center;gap:6px}
+.discount-banner{background:linear-gradient(135deg,rgba(74,222,128,0.08),rgba(74,222,128,0.03));border:1px solid rgba(74,222,128,0.2);border-radius:10px;padding:12px 16px;margin-bottom:20px;display:none;align-items:center;gap:12px}
+.discount-badge-big{background:rgba(74,222,128,0.15);border:1px solid rgba(74,222,128,0.3);border-radius:8px;padding:6px 14px;font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:700;color:#4ade80;white-space:nowrap}
+.discount-banner-text{font-size:13px;color:#9b93ae;line-height:1.5}
+.discount-banner-remove{margin-left:auto;cursor:pointer;color:#4a4360;font-size:16px;padding:4px;transition:color .2s}
+.discount-banner-remove:hover{color:#f87171}
+.price-original{text-decoration:line-through;color:#4a4360;font-size:14px;font-family:'JetBrains Mono',monospace}
+.price-discounted{color:#4ade80;font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:700}
+
+
 /* Right: Widget Panel */
 .widget-panel{display:flex;flex-direction:column;align-items:center;height:fit-content;position:sticky;top:80px}
 
@@ -204,6 +229,26 @@ html,body{min-height:100%;background:#050510;font-family:'Inter',sans-serif;colo
           <span>Total Due</span>
           <span class="val" id="summaryPrice">—</span>
         </div>
+      </div>
+
+      <!-- Discount Applied Banner (hidden until coupon applied) -->
+      <div class="discount-banner" id="discountBanner">
+        <div class="discount-badge-big" id="discountBadgeText">20% OFF</div>
+        <div class="discount-banner-text">
+          Code <strong id="appliedCodeDisplay" style="color:#e3e0f3"></strong> applied!<br>
+          <span style="color:#635c79;font-size:11px">Discount reflected in price below</span>
+        </div>
+        <div class="discount-banner-remove" onclick="removeCoupon()" title="Remove coupon">✕</div>
+      </div>
+
+      <!-- Coupon Code Input -->
+      <div class="coupon-wrap">
+        <div class="coupon-label">🏷️ Have a coupon code?</div>
+        <div class="coupon-row">
+          <input class="coupon-input" id="couponInput" type="text" placeholder="Enter code e.g. F4U20" maxlength="20" onkeydown="if(event.key==='Enter') applyCoupon()"/>
+          <button class="coupon-btn" id="couponBtn" onclick="applyCoupon()">Apply</button>
+        </div>
+        <div class="coupon-feedback" id="couponFeedback"></div>
       </div>
 
       <!-- Perks -->
@@ -379,6 +424,136 @@ function loadPlan() {
 }
 
 if (!isSuccess) loadPlan();
+
+// ── Coupon Logic ─────────────────────────────────────────────
+let activeCoupon = null; // { code, discount_percent }
+let basePriceUsd = 0;
+
+function setBasePrice(price) {
+  basePriceUsd = price;
+}
+
+async function applyCoupon() {
+  const input = document.getElementById('couponInput');
+  const btn   = document.getElementById('couponBtn');
+  const fb    = document.getElementById('couponFeedback');
+  const code  = input.value.trim().toUpperCase();
+
+  if (!code) return;
+
+  // Reset state
+  input.classList.remove('success','error');
+  fb.className = 'coupon-feedback';
+  fb.textContent = '';
+  btn.disabled = true;
+  btn.textContent = 'Checking...';
+
+  try {
+    const res  = await fetch('/api/coupons/validate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code })
+    });
+    const data = await res.json();
+
+    if (!res.ok || !data.valid) {
+      input.classList.add('error');
+      // Retrigger animation
+      void input.offsetWidth;
+      fb.className = 'coupon-feedback error';
+      fb.innerHTML = '✕ ' + (data.error || 'Invalid coupon code');
+      btn.disabled = false;
+      btn.textContent = 'Apply';
+      return;
+    }
+
+    // Valid coupon — apply it
+    activeCoupon = { code: data.code, discount_percent: data.discount_percent };
+    input.classList.add('success');
+    fb.className = 'coupon-feedback success';
+    fb.innerHTML = '✓ Code accepted!';
+    btn.textContent = 'Applied ✓';
+
+    applyDiscount();
+
+  } catch(e) {
+    fb.className = 'coupon-feedback error';
+    fb.innerHTML = '✕ Could not validate code. Try again.';
+    btn.disabled = false;
+    btn.textContent = 'Apply';
+  }
+}
+
+function applyDiscount() {
+  if (!activeCoupon || !basePriceUsd) return;
+
+  const pct        = activeCoupon.discount_percent;
+  const saving     = Math.round(basePriceUsd * pct / 100);
+  const finalPrice = basePriceUsd - saving;
+
+  // Show discount banner
+  document.getElementById('discountBanner').style.display    = 'flex';
+  document.getElementById('discountBadgeText').textContent   = pct + '% OFF';
+  document.getElementById('appliedCodeDisplay').textContent  = activeCoupon.code;
+
+  // Update plan price top-right: show strikethrough + new price
+  document.getElementById('planPrice').innerHTML =
+    `<span class="price-original">$${basePriceUsd}</span><br><span class="price-discounted">$${finalPrice}</span>`;
+
+  // Update price summary total
+  document.getElementById('summaryPrice').innerHTML =
+    `<span class="price-original">$${basePriceUsd}</span>&nbsp;<span class="price-discounted">$${finalPrice}</span>`;
+
+  // Add discount row to price summary (if not already there)
+  let discRow = document.getElementById('discountRow');
+  if (!discRow) {
+    const summary = document.querySelector('.price-summary');
+    const totalRow = document.querySelector('.price-row-item.total');
+    discRow = document.createElement('div');
+    discRow.id = 'discountRow';
+    discRow.className = 'price-row-item';
+    discRow.style.cssText = 'color:#4ade80';
+    summary.insertBefore(discRow, totalRow);
+  }
+  discRow.innerHTML = `<span>Discount (${pct}%)</span><span class="val" style="color:#4ade80">-$${saving}</span>`;
+}
+
+function removeCoupon() {
+  activeCoupon = null;
+
+  // Hide banner
+  document.getElementById('discountBanner').style.display = 'none';
+
+  // Reset input
+  const input = document.getElementById('couponInput');
+  input.value = '';
+  input.classList.remove('success','error');
+  document.getElementById('couponFeedback').className = 'coupon-feedback';
+  document.getElementById('couponFeedback').textContent = '';
+  document.getElementById('couponBtn').disabled = false;
+  document.getElementById('couponBtn').textContent = 'Apply';
+
+  // Reset prices to base
+  document.getElementById('planPrice').textContent    = `$${basePriceUsd}`;
+  document.getElementById('summaryPrice').textContent = `$${basePriceUsd}`;
+
+  // Remove discount row
+  const discRow = document.getElementById('discountRow');
+  if (discRow) discRow.remove();
+}
+
+// Patch loadPlan to capture base price
+const _origLoadPlan = loadPlan;
+// Already called above, so we hook into the price set inline:
+// Override summaryPrice and planPrice setters to capture basePriceUsd
+const _planPriceEl   = document.getElementById('planPrice');
+const _summaryPriceEl = document.getElementById('summaryPrice');
+const _priceObserver = new MutationObserver(() => {
+  const raw = _planPriceEl.textContent.replace(/[^0-9]/g,'');
+  if (raw) basePriceUsd = parseInt(raw);
+});
+_priceObserver.observe(_planPriceEl, { childList: true, subtree: true, characterData: true });
+
 </script>
 </body>
 </html>

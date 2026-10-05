@@ -257,7 +257,7 @@ app.get('/api/giveaway/today', async (req, res) => {
       .select('full_name, country, created_at')
       .eq('draw_date', today)
       .order('created_at', { ascending: false })
-      .limit(10);
+      .limit(50);
 
     res.json({ slotCount: slotCount || 0, winners: winners || [], feed: feed || [] });
   } catch (e) {
@@ -780,7 +780,61 @@ app.get('/api/admin/orders', authMiddleware, adminOnly, async (req, res) => {
   }
 });
 
+// ════════════════════════════════════════════════════════════
+// ── COUPON CODE SYSTEM ───────────────────────────────────────
+// ════════════════════════════════════════════════════════════
+
+// Public: validate a coupon code
+app.post('/api/coupons/validate', async (req, res) => {
+  const code = (req.body.code || '').toString().trim().toUpperCase();
+  if (!code) return res.status(400).json({ error: 'No code provided' });
+
+  try {
+    const { data: coupon, error } = await _sb
+      .from('coupon_codes')
+      .select('id, code, discount_percent, description, max_uses, used_count, is_active, expires_at')
+      .eq('code', code)
+      .maybeSingle();
+
+    if (error) throw error;
+    if (!coupon) return res.status(404).json({ valid: false, error: 'Invalid coupon code' });
+    if (!coupon.is_active) return res.status(410).json({ valid: false, error: 'This coupon has been deactivated' });
+    if (coupon.expires_at && new Date(coupon.expires_at) < new Date())
+      return res.status(410).json({ valid: false, error: 'This coupon has expired' });
+    if (coupon.max_uses !== null && coupon.used_count >= coupon.max_uses)
+      return res.status(410).json({ valid: false, error: 'This coupon has reached its usage limit' });
+
+    res.json({
+      valid: true,
+      code: coupon.code,
+      discount_percent: coupon.discount_percent,
+      description: coupon.description
+    });
+  } catch (e) {
+    console.error('Coupon validate error:', e);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Admin: list all coupons
+app.get('/api/admin/coupons', authMiddleware, adminOnly, async (req, res) => {
+  try {
+    const { data } = await _sb.from('coupon_codes').select('*').order('created_at', { ascending: false });
+    res.json(data || []);
+  } catch (e) { res.status(500).json({ error: 'Server error' }); }
+});
+
+// Admin: toggle coupon active/inactive
+app.post('/api/admin/coupons/toggle', authMiddleware, adminOnly, async (req, res) => {
+  const { id, is_active } = req.body;
+  try {
+    await _sb.from('coupon_codes').update({ is_active }).eq('id', id);
+    res.json({ success: true });
+  } catch (e) { res.status(500).json({ error: 'Server error' }); }
+});
+
 // ── SERVE PAGES ─────────────────────────────────────────────
+
 
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'code.html')));
 app.get('/login', (req, res) => res.sendFile(path.join(__dirname, 'login.html')));
