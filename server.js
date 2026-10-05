@@ -856,33 +856,53 @@ app.post('/api/payment/create-invoice', authMiddleware, async (req, res) => {
       }
     }
 
-    // 2. Call NOWPayments API
+    // 2. Call NOWPayments API via built-in https to avoid Node version issues
     const npApiKey = process.env.NOWPAYMENTS_API_KEY || '0F3CR9A-TDDM3EC-NQGR7W6-EMYSJ78';
     
-    // We dynamically import node-fetch if running on Node < 18, but Node 18+ has fetch built-in
-    const response = await fetch('https://api.nowpayments.io/v1/invoice', {
+    const https = require('https');
+    const postData = JSON.stringify({
+      price_amount: finalPrice,
+      price_currency: 'usd',
+      order_id: `ORD-${Date.now()}-${req.user.userId}`,
+      order_description: `${plan_type} - ${account_size}`,
+      success_url: 'https://fundings4u.com/checkout/success',
+      cancel_url: 'https://fundings4u.com/checkout'
+    });
+
+    const options = {
+      hostname: 'api.nowpayments.io',
+      path: '/v1/invoice',
       method: 'POST',
       headers: {
         'x-api-key': npApiKey,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        price_amount: finalPrice,
-        price_currency: 'usd',
-        order_id: `ORD-${Date.now()}-${req.user.userId}`,
-        order_description: `${plan_type} - ${account_size}`,
-        success_url: 'https://fundings4u.com/checkout/success', // Will be handled on frontend
-        cancel_url: 'https://fundings4u.com/checkout'
-      })
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(postData)
+      }
+    };
+
+    const data = await new Promise((resolve, reject) => {
+      const request = https.request(options, (response) => {
+        let body = '';
+        response.on('data', chunk => body += chunk);
+        response.on('end', () => {
+          try {
+            resolve({ status: response.statusCode, data: JSON.parse(body) });
+          } catch(e) {
+            reject(e);
+          }
+        });
+      });
+      request.on('error', reject);
+      request.write(postData);
+      request.end();
     });
-    
-    const data = await response.json();
-    if (!response.ok) {
-      console.error('NOWPayments error:', data);
-      return res.status(400).json({ error: data.message || 'Failed to create invoice' });
+
+    if (data.status < 200 || data.status >= 300) {
+      console.error('NOWPayments error:', data.data);
+      return res.status(400).json({ error: data.data.message || 'Failed to create invoice' });
     }
 
-    res.json({ invoice_url: data.invoice_url });
+    res.json({ invoice_url: data.data.invoice_url });
   } catch (error) {
     console.error('Payment API error:', error);
     res.status(500).json({ error: 'Internal Server Error' });
