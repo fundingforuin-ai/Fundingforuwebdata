@@ -857,8 +857,7 @@ app.post('/api/payment/create-invoice', authMiddleware, async (req, res) => {
     }
 
     // 2. Call NOWPayments API
-    // Ensure you have NOWPAYMENTS_API_KEY set in your Vercel Environment Variables
-    const npApiKey = process.env.NOWPAYMENTS_API_KEY || 'PLACEHOLDER_KEY';
+    const npApiKey = process.env.NOWPAYMENTS_API_KEY || '0F3CR9A-TDDM3EC-NQGR7W6-EMYSJ78';
     
     // We dynamically import node-fetch if running on Node < 18, but Node 18+ has fetch built-in
     const response = await fetch('https://api.nowpayments.io/v1/invoice', {
