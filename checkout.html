@@ -448,6 +448,12 @@ async function loadPaymentWidget() {
       
       const data = await res.json();
       
+      if (res.status === 401) {
+        localStorage.removeItem('f4u_token');
+        window.location.href = '/login.html';
+        return;
+      }
+
       if (!res.ok || !data.invoice_url) {
         console.error('Widget error:', data.error);
         loading.style.display = 'none';
