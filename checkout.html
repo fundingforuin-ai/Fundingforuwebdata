@@ -370,6 +370,11 @@ function loadPlan() {
     document.getElementById('feat-phase').textContent = 'No Phase 2 Required';
   }
 
+// Set base price from global currentPlan
+  if (currentPlan) {
+    basePriceUsd = parseFloat(currentPlan.price_usd);
+  }
+
   // Load the initial widget without coupon
   loadPaymentWidget();
 }
@@ -411,7 +416,7 @@ async function loadPaymentWidget() {
       loading.style.display = 'none';
       unavailable.style.display = 'flex';
       document.querySelector('.widget-unavailable-desc').innerHTML = 
-        `Payment could not be initialized.<br>Make sure the API key is configured.`;
+        `Payment could not be initialized.<br>Reason: <strong style="color:#f87171">${data.error || 'Unknown error'}</strong>`;
       return;
     }
 
@@ -583,18 +588,6 @@ function removeCoupon() {
   // Reload the payment widget with original price
   loadPaymentWidget();
 }
-
-// Patch loadPlan to capture base price
-const _origLoadPlan = loadPlan;
-// Already called above, so we hook into the price set inline:
-// Override summaryPrice and planPrice setters to capture basePriceUsd
-const _planPriceEl   = document.getElementById('planPrice');
-const _summaryPriceEl = document.getElementById('summaryPrice');
-const _priceObserver = new MutationObserver(() => {
-  const raw = _planPriceEl.textContent.replace(/[^0-9]/g,'');
-  if (raw) basePriceUsd = parseInt(raw);
-});
-_priceObserver.observe(_planPriceEl, { childList: true, subtree: true, characterData: true });
 
 </script>
 </body>
