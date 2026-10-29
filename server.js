@@ -838,8 +838,10 @@ app.post('/api/admin/coupons/toggle', authMiddleware, adminOnly, async (req, res
 // ════════════════════════════════════════════════════════════
 
 app.post('/api/payment/create-invoice', authMiddleware, async (req, res) => {
-  const { plan_type, account_size, base_price, coupon_code } = req.body;
-  let finalPrice = base_price;
+  const { plan_type, account_size, base_price, coupon_code, add_on } = req.body;
+  const addOnCost = (add_on === 'daily_payout' && plan_type === 'instant') ? 18 : 0;
+  const calculatedBase = Number(base_price) + addOnCost;
+  let finalPrice = calculatedBase;
   
   try {
     // 1. Verify and apply coupon if provided
@@ -851,8 +853,8 @@ app.post('/api/payment/create-invoice', authMiddleware, async (req, res) => {
         .maybeSingle();
 
       if (coupon && coupon.is_active && (coupon.max_uses === null || coupon.used_count < coupon.max_uses)) {
-        const saving = Math.round(base_price * coupon.discount_percent / 100);
-        finalPrice = base_price - saving;
+        const saving = Math.round(calculatedBase * coupon.discount_percent / 100);
+        finalPrice = calculatedBase - saving;
       }
     }
 
@@ -860,11 +862,15 @@ app.post('/api/payment/create-invoice', authMiddleware, async (req, res) => {
     const npApiKey = process.env.NOWPAYMENTS_API_KEY || '0F3CR9A-TDDM3EC-NQGR7W6-EMYSJ78';
     
     const https = require('https');
+    const orderDesc = addOnCost > 0
+      ? `${plan_type} - ${account_size} (+Daily Payout Add-on)`
+      : `${plan_type} - ${account_size}`;
+
     const postData = JSON.stringify({
       price_amount: finalPrice,
       price_currency: 'usd',
       order_id: `ORD-${Date.now()}-${req.user.userId}`,
-      order_description: `${plan_type} - ${account_size}`,
+      order_description: orderDesc,
       success_url: 'https://fundings4u.com/checkout/success',
       cancel_url: 'https://fundings4u.com/checkout'
     });

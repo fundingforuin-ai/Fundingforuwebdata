@@ -95,6 +95,21 @@ html,body{min-height:100%;background:#050510;font-family:'Inter',sans-serif;colo
 .price-original{text-decoration:line-through;color:#4a4360;font-size:14px;font-family:'JetBrains Mono',monospace}
 .price-discounted{color:#4ade80;font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:700}
 
+/* Add-on Card */
+.addon-card{background:linear-gradient(135deg,rgba(245,180,0,0.06),rgba(124,58,237,0.05));border:1px solid rgba(245,180,0,0.25);border-radius:14px;padding:16px 18px;margin-bottom:20px;display:none;transition:all .2s;position:relative}
+.addon-card:hover{border-color:rgba(245,180,0,0.45);box-shadow:0 0 24px rgba(245,180,0,0.08)}
+.addon-card.selected{background:linear-gradient(135deg,rgba(245,180,0,0.12),rgba(124,58,237,0.1));border-color:#f5b400;box-shadow:0 0 28px rgba(245,180,0,0.18)}
+.addon-header{display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none}
+.addon-left{display:flex;align-items:center;gap:12px}
+.addon-check{width:22px;height:22px;border-radius:6px;border:2px solid rgba(245,180,0,0.5);display:flex;align-items:center;justify-content:center;background:rgba(245,180,0,0.08);transition:all .2s;flex-shrink:0}
+.addon-card.selected .addon-check{background:#f5b400;border-color:#f5b400}
+.addon-check-icon{color:#050510;font-size:13px;font-weight:900;display:none}
+.addon-card.selected .addon-check-icon{display:block}
+.addon-title{font-size:13px;font-weight:700;color:#e3e0f3;display:flex;align-items:center;gap:8px}
+.addon-badge{font-size:9px;font-weight:700;text-transform:uppercase;background:rgba(245,180,0,0.15);border:1px solid rgba(245,180,0,0.3);color:#f5b400;padding:2px 6px;border-radius:4px;letter-spacing:.06em}
+.addon-desc{font-size:11px;color:#9b93ae;margin-top:2px}
+.addon-price{font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:700;color:#f5b400;white-space:nowrap;margin-left:12px}
+
 
 /* Right: Widget Panel */
 .widget-panel{display:flex;flex-direction:column;align-items:center;height:fit-content;position:sticky;top:80px}
@@ -208,6 +223,25 @@ html,body{min-height:100%;background:#050510;font-family:'Inter',sans-serif;colo
           <div class="plan-feature"><div class="plan-feature-icon">✓</div><span>Weekend Holding</span></div>
           <div class="plan-feature"><div class="plan-feature-icon">✓</div><span id="feat-phase">No Consistency Rule</span></div>
           <div class="plan-feature"><div class="plan-feature-icon">✓</div><span>Up to 95% Profit Split</span></div>
+        </div>
+      </div>
+
+      <!-- Add-on Feature (Instant Funding only) -->
+      <div class="addon-card" id="addonCard" onclick="toggleAddon()">
+        <div class="addon-header">
+          <div class="addon-left">
+            <div class="addon-check">
+              <span class="addon-check-icon">✓</span>
+            </div>
+            <div>
+              <div class="addon-title">
+                <span>⚡ Daily Payout Add-on</span>
+                <span class="addon-badge">Optional</span>
+              </div>
+              <div class="addon-desc">Request profit withdrawals every single day instead of weekly</div>
+            </div>
+          </div>
+          <div class="addon-price">+$18</div>
         </div>
       </div>
 
@@ -364,6 +398,8 @@ if (isSuccess) {
 let currentPlan = null;
 let activeCoupon = null; // { code, discount_percent }
 let basePriceUsd = 0;
+let addonActive = false;
+const ADDON_DAILY_PAYOUT_PRICE = 18;
 
 // ── Load plan ───────────────────────────────────────────────
 function loadPlan() {
@@ -381,18 +417,22 @@ function loadPlan() {
   // Populate left side
   document.getElementById('planBadge').textContent    = `${icon} ${label}`;
   document.getElementById('planSize').textContent     = currentPlan.account_size;
-  document.getElementById('planPrice').textContent    = `$${currentPlan.price_usd}`;
   document.getElementById('feat-dd').textContent      = `${typeDDMap[currentPlan.plan_type] || '4%'} Daily Drawdown`;
   document.getElementById('feat-max').textContent     = `${typeMaxMap[currentPlan.plan_type] || '8%'} Max Drawdown`;
   document.getElementById('summarySize').textContent  = currentPlan.account_size;
   document.getElementById('summaryType').textContent  = label;
-  document.getElementById('summaryPrice').textContent = `$${currentPlan.price_usd}`;
 
   if (currentPlan.plan_type === 'instant') {
     document.getElementById('feat-phase').textContent = 'No Phase 2 Required';
     document.getElementById('payoutPerk').textContent = 'Daily profit payouts';
+    
+    // Show Add-on card for Instant Funding
+    const addonCard = document.getElementById('addonCard');
+    if (addonCard) addonCard.style.display = 'block';
   } else {
     document.getElementById('payoutPerk').textContent = 'Weekly profit payouts';
+    const addonCard = document.getElementById('addonCard');
+    if (addonCard) addonCard.style.display = 'none';
   }
 
   // Set base price from global currentPlan
@@ -400,8 +440,77 @@ function loadPlan() {
     basePriceUsd = parseFloat(currentPlan.price_usd);
   }
 
-  // Load the initial widget without coupon
+  updateSummaryAndPrices();
+
+  // Load the initial widget
   loadPaymentWidget();
+}
+
+// ── Toggle Add-on (Daily Payout) ────────────────────────────
+function toggleAddon() {
+  addonActive = !addonActive;
+  const card = document.getElementById('addonCard');
+  if (card) {
+    if (addonActive) {
+      card.classList.add('selected');
+    } else {
+      card.classList.remove('selected');
+    }
+  }
+
+  updateSummaryAndPrices();
+  loadPaymentWidget();
+}
+
+// ── Recalculate summary and prices ──────────────────────────
+function updateSummaryAndPrices() {
+  const addonCost = addonActive ? ADDON_DAILY_PAYOUT_PRICE : 0;
+  const subtotal = basePriceUsd + addonCost;
+
+  // Update or insert/remove Add-on row in summary
+  let addonRow = document.getElementById('addonSummaryRow');
+  const summary = document.querySelector('.price-summary');
+  const totalRow = document.querySelector('.price-row-item.total');
+
+  if (addonActive) {
+    if (!addonRow) {
+      addonRow = document.createElement('div');
+      addonRow.id = 'addonSummaryRow';
+      addonRow.className = 'price-row-item';
+      summary.insertBefore(addonRow, totalRow);
+    }
+    addonRow.innerHTML = `<span>⚡ Daily Payout Add-on</span><span class="val" style="color:#f5b400">+$${ADDON_DAILY_PAYOUT_PRICE}</span>`;
+  } else if (addonRow) {
+    addonRow.remove();
+  }
+
+  // If coupon is active
+  if (activeCoupon) {
+    const pct = activeCoupon.discount_percent;
+    const saving = Math.round(subtotal * pct / 100);
+    const finalPrice = subtotal - saving;
+
+    document.getElementById('planPrice').innerHTML =
+      `<span class="price-original">$${subtotal}</span><br><span class="price-discounted">$${finalPrice}</span>`;
+    document.getElementById('summaryPrice').innerHTML =
+      `<span class="price-original">$${subtotal}</span>&nbsp;<span class="price-discounted">$${finalPrice}</span>`;
+
+    let discRow = document.getElementById('discountRow');
+    if (!discRow) {
+      discRow = document.createElement('div');
+      discRow.id = 'discountRow';
+      discRow.className = 'price-row-item';
+      discRow.style.cssText = 'color:#4ade80';
+      summary.insertBefore(discRow, totalRow);
+    }
+    discRow.innerHTML = `<span>Discount (${pct}%)</span><span class="val" style="color:#4ade80">-$${saving}</span>`;
+  } else {
+    // No coupon
+    document.getElementById('planPrice').textContent = `$${subtotal}`;
+    document.getElementById('summaryPrice').textContent = `$${subtotal}`;
+    const discRow = document.getElementById('discountRow');
+    if (discRow) discRow.remove();
+  }
 }
 
 // ── Load Payment Widget dynamically via API ─────────────────
@@ -420,8 +529,8 @@ async function loadPaymentWidget() {
   let iid = null;
   let fallbackUrl = null;
 
-  if (!activeCoupon) {
-    // ── No coupon applied: Use static widget map ──
+  // If NO coupon and NO addon → use the pre-configured static widget map
+  if (!activeCoupon && !addonActive) {
     const sizes = widgetMap[currentPlan.plan_type] || {};
     iid = sizes[currentPlan.account_size];
     
@@ -431,13 +540,14 @@ async function loadPaymentWidget() {
       return;
     }
   } else {
-    // ── Coupon applied: Generate dynamic invoice via API ──
+    // ── Coupon applied OR Add-on selected: Generate dynamic invoice via API ──
     try {
       const payload = {
         plan_type: currentPlan.plan_type,
         account_size: currentPlan.account_size,
         base_price: currentPlan.price_usd,
-        coupon_code: activeCoupon.code
+        coupon_code: activeCoupon ? activeCoupon.code : null,
+        add_on: addonActive ? 'daily_payout' : null
       };
 
       const res = await fetch('/api/payment/create-invoice', {
@@ -578,35 +688,12 @@ async function applyCoupon() {
 function applyDiscount() {
   if (!activeCoupon || !basePriceUsd) return;
 
-  const pct        = activeCoupon.discount_percent;
-  const saving     = Math.round(basePriceUsd * pct / 100);
-  const finalPrice = basePriceUsd - saving;
-
   // Show discount banner
   document.getElementById('discountBanner').style.display    = 'flex';
-  document.getElementById('discountBadgeText').textContent   = pct + '% OFF';
+  document.getElementById('discountBadgeText').textContent   = activeCoupon.discount_percent + '% OFF';
   document.getElementById('appliedCodeDisplay').textContent  = activeCoupon.code;
 
-  // Update plan price top-right: show strikethrough + new price
-  document.getElementById('planPrice').innerHTML =
-    `<span class="price-original">$${basePriceUsd}</span><br><span class="price-discounted">$${finalPrice}</span>`;
-
-  // Update price summary total
-  document.getElementById('summaryPrice').innerHTML =
-    `<span class="price-original">$${basePriceUsd}</span>&nbsp;<span class="price-discounted">$${finalPrice}</span>`;
-
-  // Add discount row to price summary (if not already there)
-  let discRow = document.getElementById('discountRow');
-  if (!discRow) {
-    const summary = document.querySelector('.price-summary');
-    const totalRow = document.querySelector('.price-row-item.total');
-    discRow = document.createElement('div');
-    discRow.id = 'discountRow';
-    discRow.className = 'price-row-item';
-    discRow.style.cssText = 'color:#4ade80';
-    summary.insertBefore(discRow, totalRow);
-  }
-  discRow.innerHTML = `<span>Discount (${pct}%)</span><span class="val" style="color:#4ade80">-$${saving}</span>`;
+  updateSummaryAndPrices();
   
   // Reload the payment widget with the new price
   loadPaymentWidget();
@@ -627,13 +714,7 @@ function removeCoupon() {
   document.getElementById('couponBtn').disabled = false;
   document.getElementById('couponBtn').textContent = 'Apply';
 
-  // Reset prices to base
-  document.getElementById('planPrice').textContent    = `$${basePriceUsd}`;
-  document.getElementById('summaryPrice').textContent = `$${basePriceUsd}`;
-
-  // Remove discount row
-  const discRow = document.getElementById('discountRow');
-  if (discRow) discRow.remove();
+  updateSummaryAndPrices();
 
   // Reload the payment widget with original price
   loadPaymentWidget();
