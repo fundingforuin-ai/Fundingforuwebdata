@@ -67,17 +67,28 @@ const query = async (sql, params = []) => {
     if (error) throw new Error(error.message);
     return { rows: data ? [data] : [] };
   }
+  if (/^UPDATE users SET full_name/i.test(s)) {
+    let updateData = { full_name: params[0], email: params[1], phone: params[2] || null };
+    let userId = params[3];
+    if (params.length === 5) {
+      updateData = { full_name: params[0], email: params[1], phone: params[2] || null, password_hash: params[3] };
+      userId = params[4];
+    }
+    const { error } = await supabase.from('users').update(updateData).eq('id', userId);
+    if (error) throw new Error(error.message);
+    return { rows: [] };
+  }
 
   // ── JOIN: admin users list ─────────────────────────────────
   if (/FROM users u.*LEFT JOIN trading_accounts/is.test(s)) {
-    const { data: users, error } = await supabase.from('users').select('id, full_name, email, role, created_at').order('created_at', { ascending: false });
+    const { data: users, error } = await supabase.from('users').select('id, full_name, email, phone, role, created_at').order('created_at', { ascending: false });
     if (error) throw new Error(error.message);
     const { data: accounts } = await supabase.from('trading_accounts').select('id, user_id, mt5_login, mt5_server, account_size, challenge_type, status');
     const accMap = {};
     (accounts || []).forEach(a => { accMap[a.user_id] = a; });
     const rows = (users || []).map(u => {
       const ta = accMap[u.id] || {};
-      return { ...u, account_id: ta.id || null, mt5_login: ta.mt5_login || null, mt5_server: ta.mt5_server || null, account_size: ta.account_size || null, challenge_type: ta.challenge_type || null, status: ta.status || null };
+      return { ...u, phone: u.phone || null, account_id: ta.id || null, mt5_login: ta.mt5_login || null, mt5_server: ta.mt5_server || null, account_size: ta.account_size || null, challenge_type: ta.challenge_type || null, status: ta.status || null };
     });
     return { rows };
   }

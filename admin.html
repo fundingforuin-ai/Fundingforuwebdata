@@ -162,9 +162,9 @@ tr:hover td{background:rgba(124,58,237,0.03)}
 
       <table>
         <thead><tr>
-          <th>Trader</th><th>Email</th><th>MT5 Login</th><th>Server</th><th>Account Size</th><th>Challenge</th><th>Status</th><th>Action</th>
+          <th>Trader ID</th><th>Full Name</th><th>Email</th><th>Phone</th><th>Registered Date</th><th>MT5 Login</th><th>Server</th><th>Account Size</th><th>Challenge</th><th>Status</th><th>Action</th>
         </tr></thead>
-        <tbody id="usersTable"><tr><td colspan="8" style="text-align:center;color:#635c79;padding:30px">Loading traders...</td></tr></tbody>
+        <tbody id="usersTable"><tr><td colspan="11" style="text-align:center;color:#635c79;padding:30px">Loading traders...</td></tr></tbody>
       </table>
 
       <!-- Pagination Controls -->
@@ -235,6 +235,7 @@ tr:hover td{background:rgba(124,58,237,0.03)}
     <input type="hidden" id="editUserId"/>
     <div class="form-group"><label>Full Name</label><input type="text" id="editFullName" placeholder="e.g. John Doe"/></div>
     <div class="form-group"><label>Email Address</label><input type="email" id="editEmail" placeholder="e.g. user@example.com"/></div>
+    <div class="form-group"><label>Phone Number</label><input type="tel" id="editPhone" placeholder="e.g. +1 234 567 8900"/></div>
     <div class="form-group"><label>New Password</label><input type="password" id="editPassword" placeholder="Leave blank to keep current password"/></div>
     <div class="modal-btns">
       <button class="btn-cancel" onclick="closeProfileModal()">Cancel</button>
@@ -338,15 +339,20 @@ async function loadUsers() {
     tbody.innerHTML = traders.map(u => {
       const safeName = (u.full_name || 'Trader').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
       const safeEmail = (u.email || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+      const safePhone = (u.phone || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
       const safeLogin = (u.mt5_login || '').replace(/'/g, "\\'");
       const safeServer = (u.mt5_server || '').replace(/'/g, "\\'");
       const safeType = (u.challenge_type || '2step').replace(/'/g, "\\'");
       const safeSize = Number(u.account_size) || 0;
+      const regDate = u.created_at ? new Date(u.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : '—';
 
       return `
       <tr>
-        <td><strong style="color:#e3e0f3">${u.full_name || '—'}</strong><br/><span style="font-size:11px;color:#635c79">#${u.id}</span></td>
+        <td class="mono" style="font-weight:700;color:#f87171">#${u.id}</td>
+        <td><strong style="color:#e3e0f3">${u.full_name || '—'}</strong></td>
         <td style="color:#958da1">${u.email || '—'}</td>
+        <td style="font-size:12px;color:#c4b9e0">${u.phone ? '📞 ' + u.phone : '<span style="color:#635c79">Not provided</span>'}</td>
+        <td style="font-size:11px;color:#7a6fa0">${regDate}</td>
         <td class="mono">${u.mt5_login || '—'}</td>
         <td style="font-size:12px;color:#7a6fa0">${u.mt5_server || '—'}</td>
         <td>${u.account_size ? '$' + Number(u.account_size).toLocaleString() : '—'}</td>
@@ -354,7 +360,7 @@ async function loadUsers() {
         <td><span class="status-pill ${u.status || 'none'}">${u.status || 'Not Assigned'}</span></td>
         <td>
           <button class="btn-assign" onclick="openModal(${u.id}, '${safeName}', '${safeLogin}', '${safeServer}', ${safeSize}, '${safeType}')">Assign MT5</button>
-          <button class="btn-edit" onclick="openProfileModal(${u.id}, '${safeName}', '${safeEmail}')">Edit Profile</button>
+          <button class="btn-edit" onclick="openProfileModal(${u.id}, '${safeName}', '${safeEmail}', '${safePhone}')">Edit Profile</button>
         </td>
       </tr>
       `;
@@ -447,11 +453,12 @@ async function saveAccount() {
   } catch(e) { showToast('Error saving account', false); }
 }
 
-function openProfileModal(userId, name, email) {
+function openProfileModal(userId, name, email, phone) {
   document.getElementById('editUserId').value = userId;
   document.getElementById('editProfileSub').textContent = 'Editing profile: ' + name;
   document.getElementById('editFullName').value = name;
   document.getElementById('editEmail').value = email;
+  document.getElementById('editPhone').value = phone || '';
   document.getElementById('editPassword').value = '';
   document.getElementById('editProfileModal').classList.add('show');
 }
@@ -461,6 +468,7 @@ async function saveProfile() {
   const user_id = document.getElementById('editUserId').value;
   const full_name = document.getElementById('editFullName').value.trim();
   const email = document.getElementById('editEmail').value.trim();
+  const phone = document.getElementById('editPhone').value.trim();
   const new_password = document.getElementById('editPassword').value.trim();
   if (!full_name || !email) { showToast('Name and email are required', false); return; }
   
@@ -468,7 +476,7 @@ async function saveProfile() {
     const res = await fetch('/api/admin/edit-user', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-      body: JSON.stringify({ user_id: parseInt(user_id), full_name, email, new_password })
+      body: JSON.stringify({ user_id: parseInt(user_id), full_name, email, phone, new_password })
     });
     if (!res.ok) throw new Error('Failed');
     closeProfileModal();

@@ -157,7 +157,7 @@ app.get('/api/admin/users', authMiddleware, adminOnly, async (req, res) => {
 
     // Query all registered users from DB
     const { rows: allUsers } = await db.query(`
-      SELECT u.id, u.full_name, u.email, u.role, u.created_at,
+      SELECT u.id, u.full_name, u.email, u.phone, u.role, u.created_at,
              ta.id as account_id, ta.mt5_login, ta.mt5_server, ta.account_size, ta.challenge_type, ta.status
       FROM users u
       LEFT JOIN trading_accounts ta ON ta.user_id = u.id
@@ -172,6 +172,7 @@ app.get('/api/admin/users', authMiddleware, adminOnly, async (req, res) => {
       traders = traders.filter(u =>
         (u.full_name && u.full_name.toLowerCase().includes(q)) ||
         (u.email && u.email.toLowerCase().includes(q)) ||
+        (u.phone && String(u.phone).includes(q)) ||
         (u.mt5_login && String(u.mt5_login).includes(q)) ||
         (u.id && String(u.id).includes(q))
       );
@@ -242,19 +243,19 @@ app.post('/api/admin/assign-account', authMiddleware, adminOnly, async (req, res
 
 // ── ADMIN: EDIT USER PROFILE ────────────────────────────────
 app.post('/api/admin/edit-user', authMiddleware, adminOnly, async (req, res) => {
-  const { user_id, full_name, email, new_password } = req.body;
+  const { user_id, full_name, email, phone, new_password } = req.body;
   try {
     if (new_password) {
       const salt = await bcrypt.genSalt(10);
       const hash = await bcrypt.hash(new_password, salt);
       await db.query(
-        'UPDATE users SET full_name = $1, email = $2, password_hash = $3 WHERE id = $4',
-        [full_name, email, hash, user_id]
+        'UPDATE users SET full_name = $1, email = $2, phone = $3, password_hash = $4 WHERE id = $5',
+        [full_name, email, phone || null, hash, user_id]
       );
     } else {
       await db.query(
-        'UPDATE users SET full_name = $1, email = $2 WHERE id = $3',
-        [full_name, email, user_id]
+        'UPDATE users SET full_name = $1, email = $2, phone = $3 WHERE id = $4',
+        [full_name, email, phone || null, user_id]
       );
     }
     res.json({ success: true });
