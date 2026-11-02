@@ -335,21 +335,30 @@ async function loadUsers() {
       return;
     }
 
-    tbody.innerHTML = traders.map(u => `
+    tbody.innerHTML = traders.map(u => {
+      const safeName = (u.full_name || 'Trader').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+      const safeEmail = (u.email || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+      const safeLogin = (u.mt5_login || '').replace(/'/g, "\\'");
+      const safeServer = (u.mt5_server || '').replace(/'/g, "\\'");
+      const safeType = (u.challenge_type || '2step').replace(/'/g, "\\'");
+      const safeSize = Number(u.account_size) || 0;
+
+      return `
       <tr>
-        <td><strong style="color:#e3e0f3">${u.full_name}</strong><br/><span style="font-size:11px;color:#635c79">#${u.id}</span></td>
-        <td style="color:#958da1">${u.email}</td>
+        <td><strong style="color:#e3e0f3">${u.full_name || '—'}</strong><br/><span style="font-size:11px;color:#635c79">#${u.id}</span></td>
+        <td style="color:#958da1">${u.email || '—'}</td>
         <td class="mono">${u.mt5_login || '—'}</td>
         <td style="font-size:12px;color:#7a6fa0">${u.mt5_server || '—'}</td>
         <td>${u.account_size ? '$' + Number(u.account_size).toLocaleString() : '—'}</td>
         <td style="font-size:12px">${{'2step':'2 Step', 'instant':'Instant', 'unlimited':'Unlimited'}[u.challenge_type] || '—'}</td>
         <td><span class="status-pill ${u.status || 'none'}">${u.status || 'Not Assigned'}</span></td>
         <td>
-          <button class="btn-assign" onclick="openModal(${u.id}, '${(u.full_name || '').replace(/'/g, "\\'")}', '${u.mt5_login || ''}', '${u.mt5_server || ''}', ${u.account_size || 0}, '${u.challenge_type || '2step'}')">Assign MT5</button>
-          <button class="btn-edit" onclick="openProfileModal(${u.id}, '${(u.full_name || '').replace(/'/g, "\\'")}', '${u.email || ''}')">Edit Profile</button>
+          <button class="btn-assign" onclick="openModal(${u.id}, '${safeName}', '${safeLogin}', '${safeServer}', ${safeSize}, '${safeType}')">Assign MT5</button>
+          <button class="btn-edit" onclick="openProfileModal(${u.id}, '${safeName}', '${safeEmail}')">Edit Profile</button>
         </td>
       </tr>
-    `).join('');
+      `;
+    }).join('');
 
     // Pagination Display
     renderPagination(totalUsers, totalPages);
