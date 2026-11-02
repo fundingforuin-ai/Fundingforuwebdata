@@ -181,7 +181,10 @@ app.get('/api/admin/users', authMiddleware, adminOnly, async (req, res) => {
     const total = traders.length;
     const totalPages = Math.ceil(total / limit) || 1;
     const startIndex = (page - 1) * limit;
-    const paginatedUsers = traders.slice(startIndex, startIndex + limit);
+
+    // If export=all or limit=all is requested, return all traders without slicing
+    const isExport = req.query.export === 'csv' || req.query.limit === 'all';
+    const paginatedUsers = isExport ? traders : traders.slice(startIndex, startIndex + limit);
 
     // Compute overview stats across all non-admin registered traders
     const activeCount = traders.filter(u => u.status === 'active').length;

@@ -154,8 +154,9 @@ tr:hover td{background:rgba(124,58,237,0.03)}
           <span style="font-size:14px;color:#7a718f">🔍</span>
           <input type="text" id="searchInput" placeholder="Search by name, email, ID, MT5..." oninput="handleSearch()"/>
         </div>
-        <div style="display:flex;align-items:center;gap:10px">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
           <span style="font-size:12px;color:#7a718f">Per page: <strong>200</strong></span>
+          <button class="btn-assign" onclick="downloadUsersCSV()" id="btnExportCSV" style="background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.3);color:#34d399">📥 Download CSV</button>
           <button class="btn-assign" onclick="loadUsers()" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);color:#e3e0f3">🔄 Refresh</button>
         </div>
       </div>
@@ -419,6 +420,85 @@ function renderPagination(totalUsers, totalPages) {
   html += `<button class="page-btn" ${currentPage === totalPages ? 'disabled' : ''} onclick="goToPage(${currentPage + 1})">Next →</button>`;
 
   btns.innerHTML = html;
+}
+
+// ── Export all users to CSV ──
+async function downloadUsersCSV() {
+  const btn = document.getElementById('btnExportCSV');
+  const originalText = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '⏳ Exporting...';
+
+  try {
+    const params = new URLSearchParams({
+      export: 'csv',
+      search: currentSearch
+    });
+    const res = await fetch('/api/admin/users?' + params.toString(), { headers: { Authorization: 'Bearer ' + token } });
+    if (!res.ok) throw new Error('Failed to fetch users');
+    const data = await res.json();
+    const traders = (data.users || []).filter(u => u.role !== 'admin');
+
+    if (!traders.length) {
+      showToast('No users to export', false);
+      return;
+    }
+
+    // CSV Headers
+    const headers = [
+      'Trader ID',
+      'Full Name',
+      'Email',
+      'Phone Number',
+      'Registration Date',
+      'MT5 Login',
+      'MT5 Server',
+      'Account Size',
+      'Challenge Type',
+      'Status'
+    ];
+
+    const escapeCSV = (val) => {
+      if (val === null || val === undefined) return '""';
+      const str = String(val).replace(/"/g, '""');
+      return `"${str}"`;
+    };
+
+    const typeMap = { '2step': '2 Step Evaluation', 'instant': 'Instant Funding', 'unlimited': 'Unlimited Try' };
+
+    const rows = traders.map(u => [
+      escapeCSV(u.id),
+      escapeCSV(u.full_name || ''),
+      escapeCSV(u.email || ''),
+      escapeCSV(u.phone || ''),
+      escapeCSV(u.created_at ? new Date(u.created_at).toISOString().split('T')[0] : ''),
+      escapeCSV(u.mt5_login || ''),
+      escapeCSV(u.mt5_server || ''),
+      escapeCSV(u.account_size ? '$' + Number(u.account_size).toLocaleString() : ''),
+      escapeCSV(typeMap[u.challenge_type] || u.challenge_type || ''),
+      escapeCSV(u.status || 'Not Assigned')
+    ].join(','));
+
+    const csvContent = '\uFEFF' + [headers.map(h => `"${h}"`).join(','), ...rows].join('\r\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    const dateStr = new Date().toISOString().split('T')[0];
+    link.setAttribute('href', url);
+    link.setAttribute('download', `fundings4u_registered_users_${dateStr}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    showToast(`✓ Exported ${traders.length} users to CSV!`);
+  } catch (err) {
+    console.error('CSV export error:', err);
+    showToast('Failed to export CSV', false);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = originalText;
+  }
 }
 
 function openModal(userId, name, login, server, size, type) {
