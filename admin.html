@@ -78,6 +78,19 @@ tr:hover td{background:rgba(124,58,237,0.03)}
 .toast{position:fixed;bottom:24px;right:24px;background:#1a1730;border:1px solid rgba(16,185,129,.3);border-radius:10px;padding:12px 20px;font-size:13px;color:#34d399;z-index:9999;transform:translateY(20px);opacity:0;transition:all .3s}
 .toast.show{transform:translateY(0);opacity:1}
 
+/* Pagination & Filter Controls */
+.controls-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.search-box{display:flex;align-items:center;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:8px 14px;width:100%;max-width:320px}
+.search-box input{background:none;border:none;outline:none;color:#e3e0f3;font-size:13px;width:100%;margin-left:8px;font-family:'Inter',sans-serif}
+.search-box input::placeholder{color:#635c79}
+.pagination-wrap{display:flex;align-items:center;justify-content:space-between;padding:16px 8px 4px;border-top:1px solid rgba(255,255,255,0.05);margin-top:12px;flex-wrap:wrap;gap:12px}
+.pagination-info{font-size:12px;color:#7a718f}
+.pagination-pages{display:flex;align-items:center;gap:6px}
+.page-btn{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);color:#c4b9e0;padding:6px 12px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;font-family:'Inter',sans-serif}
+.page-btn:hover:not(:disabled){background:rgba(239,68,68,0.12);border-color:rgba(239,68,68,0.3);color:#fca5a5}
+.page-btn.active{background:linear-gradient(135deg,#7c3aed,#5b21b6);border-color:transparent;color:#fff}
+.page-btn:disabled{opacity:0.35;cursor:not-allowed}
+
 @media(max-width:768px){
   :root{--sb:0px}
   .sidebar{display:none}
@@ -129,15 +142,36 @@ tr:hover td{background:rgba(124,58,237,0.03)}
 
     <div class="section-card">
       <div class="section-head">
-        <div class="section-title">Registered Traders</div>
+        <div>
+          <div class="section-title">Registered Traders</div>
+          <div style="font-size:12px;color:#7a718f;margin-top:4px" id="totalTradersCount">Showing all registered users</div>
+        </div>
         <div style="font-size:12px;color:#635c79" id="lastRefresh">Loading...</div>
       </div>
+
+      <div class="controls-bar">
+        <div class="search-box">
+          <span style="font-size:14px;color:#7a718f">🔍</span>
+          <input type="text" id="searchInput" placeholder="Search by name, email, ID, MT5..." oninput="handleSearch()"/>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:12px;color:#7a718f">Per page: <strong>200</strong></span>
+          <button class="btn-assign" onclick="loadUsers()" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);color:#e3e0f3">🔄 Refresh</button>
+        </div>
+      </div>
+
       <table>
         <thead><tr>
           <th>Trader</th><th>Email</th><th>MT5 Login</th><th>Server</th><th>Account Size</th><th>Challenge</th><th>Status</th><th>Action</th>
         </tr></thead>
         <tbody id="usersTable"><tr><td colspan="8" style="text-align:center;color:#635c79;padding:30px">Loading traders...</td></tr></tbody>
       </table>
+
+      <!-- Pagination Controls -->
+      <div class="pagination-wrap" id="paginationWrap" style="display:none">
+        <div class="pagination-info" id="paginationInfo">Showing 0-0 of 0 users</div>
+        <div class="pagination-pages" id="paginationBtns"></div>
+      </div>
     </div>
   </div>
 </main>
@@ -233,26 +267,73 @@ function showToast(msg, ok = true) {
   setTimeout(() => t.classList.remove('show'), 3000);
 }
 
+let currentPage = 1;
+const USERS_PER_PAGE = 200;
+let currentSearch = '';
+let searchTimeout = null;
+
+function handleSearch() {
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(() => {
+    currentSearch = document.getElementById('searchInput').value.trim();
+    currentPage = 1;
+    loadUsers();
+  }, 300);
+}
+
+function goToPage(page) {
+  currentPage = page;
+  loadUsers();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
 async function loadUsers() {
   try {
-    const res = await fetch('/api/admin/users', { headers: { Authorization: 'Bearer ' + token } });
+    const params = new URLSearchParams({
+      page: currentPage,
+      limit: USERS_PER_PAGE,
+      search: currentSearch
+    });
+    const res = await fetch('/api/admin/users?' + params.toString(), { headers: { Authorization: 'Bearer ' + token } });
     if (res.status === 401 || res.status === 403) { localStorage.clear(); window.location.href = '/login'; return; }
-    const users = await res.json();
+    const data = await res.json();
     document.getElementById('lastRefresh').textContent = 'Updated: ' + new Date().toLocaleTimeString();
 
-    // Stats
-    const active = users.filter(u => u.status === 'active').length;
-    const pending = users.filter(u => u.status === 'pending').length;
-    const none = users.filter(u => !u.account_id).length;
-    document.getElementById('statTotal').textContent = users.filter(u => u.role !== 'admin').length;
-    document.getElementById('statActive').textContent = active;
-    document.getElementById('statPending').textContent = pending;
-    document.getElementById('statNone').textContent = none;
+    // Support both new paginated response { users, total, stats } and legacy array fallback
+    const users = Array.isArray(data) ? data : (data.users || []);
+    const totalUsers = data.total !== undefined ? data.total : users.filter(u => u.role !== 'admin').length;
+    const totalPages = data.totalPages !== undefined ? data.totalPages : Math.ceil(totalUsers / USERS_PER_PAGE) || 1;
 
-    // Table
+    // Update Stats Cards
+    if (data.stats) {
+      document.getElementById('statTotal').textContent = data.stats.total.toLocaleString();
+      document.getElementById('statActive').textContent = data.stats.active.toLocaleString();
+      document.getElementById('statPending').textContent = data.stats.pending.toLocaleString();
+      document.getElementById('statNone').textContent = data.stats.none.toLocaleString();
+    } else {
+      const active = users.filter(u => u.status === 'active').length;
+      const pending = users.filter(u => u.status === 'pending' || u.status === 'setup_pending').length;
+      const none = users.filter(u => !u.account_id).length;
+      document.getElementById('statTotal').textContent = totalUsers.toLocaleString();
+      document.getElementById('statActive').textContent = active.toLocaleString();
+      document.getElementById('statPending').textContent = pending.toLocaleString();
+      document.getElementById('statNone').textContent = none.toLocaleString();
+    }
+
+    // Subtitle Total Count Indicator
+    const countEl = document.getElementById('totalTradersCount');
+    if (countEl) {
+      countEl.innerHTML = `Total registered traders: <strong style="color:#f87171">${totalUsers.toLocaleString()}</strong> ${currentSearch ? `(filtered by "${currentSearch}")` : ''}`;
+    }
+
+    // Table Render
     const tbody = document.getElementById('usersTable');
     const traders = users.filter(u => u.role !== 'admin');
-    if (!traders.length) { tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#635c79;padding:30px">No traders registered yet.</td></tr>'; return; }
+    if (!traders.length) {
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:#635c79;padding:30px">${currentSearch ? 'No traders match your search.' : 'No traders registered yet.'}</td></tr>`;
+      document.getElementById('paginationWrap').style.display = 'none';
+      return;
+    }
 
     tbody.innerHTML = traders.map(u => `
       <tr>
@@ -264,12 +345,65 @@ async function loadUsers() {
         <td style="font-size:12px">${{'2step':'2 Step', 'instant':'Instant', 'unlimited':'Unlimited'}[u.challenge_type] || '—'}</td>
         <td><span class="status-pill ${u.status || 'none'}">${u.status || 'Not Assigned'}</span></td>
         <td>
-          <button class="btn-assign" onclick="openModal(${u.id}, '${u.full_name}', '${u.mt5_login || ''}', '${u.mt5_server || ''}', ${u.account_size || 0}, '${u.challenge_type || '2step'}')">Assign MT5</button>
-          <button class="btn-edit" onclick="openProfileModal(${u.id}, '${u.full_name}', '${u.email}')">Edit Profile</button>
+          <button class="btn-assign" onclick="openModal(${u.id}, '${(u.full_name || '').replace(/'/g, "\\'")}', '${u.mt5_login || ''}', '${u.mt5_server || ''}', ${u.account_size || 0}, '${u.challenge_type || '2step'}')">Assign MT5</button>
+          <button class="btn-edit" onclick="openProfileModal(${u.id}, '${(u.full_name || '').replace(/'/g, "\\'")}', '${u.email || ''}')">Edit Profile</button>
         </td>
       </tr>
     `).join('');
-  } catch(e) { console.error(e); }
+
+    // Pagination Display
+    renderPagination(totalUsers, totalPages);
+
+  } catch(e) { console.error('Error loading users:', e); }
+}
+
+function renderPagination(totalUsers, totalPages) {
+  const wrap = document.getElementById('paginationWrap');
+  const info = document.getElementById('paginationInfo');
+  const btns = document.getElementById('paginationBtns');
+
+  if (totalPages <= 1 && totalUsers <= USERS_PER_PAGE) {
+    wrap.style.display = 'flex';
+    info.textContent = `Showing all ${totalUsers.toLocaleString()} registered traders (Page 1 of 1)`;
+    btns.innerHTML = '';
+    return;
+  }
+
+  wrap.style.display = 'flex';
+  const start = ((currentPage - 1) * USERS_PER_PAGE) + 1;
+  const end = Math.min(currentPage * USERS_PER_PAGE, totalUsers);
+  info.innerHTML = `Showing <strong>${start.toLocaleString()} - ${end.toLocaleString()}</strong> of <strong>${totalUsers.toLocaleString()}</strong> total traders`;
+
+  let html = '';
+  // Prev button
+  html += `<button class="page-btn" ${currentPage === 1 ? 'disabled' : ''} onclick="goToPage(${currentPage - 1})">← Prev</button>`;
+
+  // Page numbers logic (sliding window)
+  const maxButtons = 5;
+  let startPage = Math.max(1, currentPage - Math.floor(maxButtons / 2));
+  let endPage = Math.min(totalPages, startPage + maxButtons - 1);
+  if (endPage - startPage + 1 < maxButtons) {
+    startPage = Math.max(1, endPage - maxButtons + 1);
+  }
+
+  if (startPage > 1) {
+    html += `<button class="page-btn" onclick="goToPage(1)">1</button>`;
+    if (startPage > 2) html += `<span style="color:#635c79;padding:0 4px">...</span>`;
+  }
+
+  for (let p = startPage; p <= endPage; p++) {
+    html += `<button class="page-btn ${p === currentPage ? 'active' : ''}" onclick="goToPage(${p})">${p}</button>`;
+  }
+
+  if (endPage < totalPages) {
+    if (endPage < totalPages - 1) html += `<span style="color:#635c79;padding:0 4px">...</span>`;
+    html += `<button class="page-btn" onclick="goToPage(${totalPages})">${totalPages}</button>`;
+  }
+
+  // Next button
+  html += `<button class="page-btn" ${currentPage === totalPages ? 'disabled' : ''} onclick="goToPage(${currentPage + 1})">Next →</button>`;
+
+  btns.innerHTML = html;
 }
 
 function openModal(userId, name, login, server, size, type) {

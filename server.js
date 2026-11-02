@@ -148,18 +148,60 @@ app.get('/api/dashboard', authMiddleware, async (req, res) => {
   }
 });
 
-// ── ADMIN: GET ALL USERS ────────────────────────────────────
+// ── ADMIN: GET ALL USERS (PAGINATED) ──────────────────────────
 app.get('/api/admin/users', authMiddleware, adminOnly, async (req, res) => {
   try {
-    const { rows: users } = await db.query(`
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.max(1, Math.min(500, parseInt(req.query.limit) || 200));
+    const search = (req.query.search || '').trim();
+
+    // Query all registered users from DB
+    const { rows: allUsers } = await db.query(`
       SELECT u.id, u.full_name, u.email, u.role, u.created_at,
              ta.id as account_id, ta.mt5_login, ta.mt5_server, ta.account_size, ta.challenge_type, ta.status
       FROM users u
       LEFT JOIN trading_accounts ta ON ta.user_id = u.id
       ORDER BY u.created_at DESC
     `);
-    res.json(users);
+
+    // Filter out admin users from traders list
+    let traders = (allUsers || []).filter(u => u.role !== 'admin');
+
+    if (search) {
+      const q = search.toLowerCase();
+      traders = traders.filter(u =>
+        (u.full_name && u.full_name.toLowerCase().includes(q)) ||
+        (u.email && u.email.toLowerCase().includes(q)) ||
+        (u.mt5_login && String(u.mt5_login).includes(q)) ||
+        (u.id && String(u.id).includes(q))
+      );
+    }
+
+    const total = traders.length;
+    const totalPages = Math.ceil(total / limit) || 1;
+    const startIndex = (page - 1) * limit;
+    const paginatedUsers = traders.slice(startIndex, startIndex + limit);
+
+    // Compute overview stats across all non-admin registered traders
+    const activeCount = traders.filter(u => u.status === 'active').length;
+    const pendingCount = traders.filter(u => u.status === 'pending' || u.status === 'setup_pending').length;
+    const noneCount = traders.filter(u => !u.account_id).length;
+
+    res.json({
+      users: paginatedUsers,
+      total,
+      page,
+      limit,
+      totalPages,
+      stats: {
+        total,
+        active: activeCount,
+        pending: pendingCount,
+        none: noneCount
+      }
+    });
   } catch (error) {
+    console.error('Admin users error:', error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
