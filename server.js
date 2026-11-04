@@ -279,9 +279,209 @@ const _sb = createSbClient(
   { auth: { persistSession: false } }
 );
 
-// Public: get today's stats + recent winners
+// ── Global pools for realistic automated giveaway data ──────
+const GIVEAWAY_FIRST_NAMES = [
+  'Ahmed', 'Hamza', 'Carlos', 'Liam', 'Arjun', 'Sofia', 'David', 'Yusuf', 'Maria', 'Alex',
+  'Tariq', 'Elena', 'James', 'Fatima', 'Lucas', 'Andrei', 'Mohammed', 'Sarah', 'Rahul', 'Viktor',
+  'Amina', 'Daniel', 'Ivan', 'Priya', 'Omar', 'Anya', 'Samuel', 'Bilal', 'Julia', 'Kwame',
+  'Nadia', 'Leo', 'Rania', 'Emmanuel', 'Aisha', 'Marco', 'Zara', 'Felix', 'Deepak', 'Noura',
+  'Tunde', 'Carmen', 'Vikram', 'Layla', 'Kevin', 'Pita', 'Amara', 'Stefan', 'Riya', 'Musa',
+  'Hassan', 'Tomás', 'Amira', 'Chukwuemeka', 'Yuki', 'Darius', 'Fatou', 'Muhammad', 'Anastasia', 'Kwabena',
+  'Nasrin', 'Diego', 'Chiamaka', 'Petros', 'Zainab', 'Adebayo', 'Lena', 'Siddharth', 'Mariam', 'Olumide',
+  'Wanjiku', 'Miroslav', 'Thanh', 'Rohan', 'Fatoumata', 'Aleksei', 'Ethan', 'Noah', 'Chloe', 'Oliver',
+  'Mateo', 'Kenji', 'Ananya', 'Gabriel', 'Santiago', 'Mateo', 'Sebastián', 'Alejandro', 'Zayd', 'Adil',
+  'Kareem', 'Sami', 'Leila', 'Noor', 'Farah', 'Mina', 'Kenzo', 'Hiroshi', 'Sora', 'Mei',
+  'Ji-hoon', 'Min-jun', 'Seo-yeon', 'Elijah', 'Mason', 'Harper', 'Evelyn', 'Benjamin', 'Mia', 'Lucas'
+];
+
+const GIVEAWAY_LAST_NAMES = [
+  'Al-Rashid', 'Khan', 'Mendez', "O'Brien", 'Sharma', 'Novak', 'Osei', 'Ibrahim', 'Santos', 'Kowalski',
+  'Hussain', 'Popescu', 'Mwangi', 'Al-Zahra', 'Ferreira', 'Ionescu', 'Al-Farsi', "O'Connor", 'Patel', 'Kovalev',
+  'Diallo', 'Okafor', 'Petrov', 'Nair', 'Abdullah', 'Koroleva', 'Asante', 'Malik', 'Martins', 'Asiedu',
+  'Hassan', 'Müller', 'Khalil', 'Adjei', 'Mohammed', 'Ricci', 'Ahmed', 'Mensah', 'Verma', 'Al-Hamdan',
+  'Adeyemi', 'López', 'Singh', 'Al-Amin', 'Otieno', 'Havili', 'Traoré', 'Nowak', 'Desai', 'Kone',
+  'Al-Mutairi', 'Krishnan', 'García', 'Benali', 'Nwachukwu', 'Tanaka', 'Zubair', 'Petrova', 'Hosseini', 'Vargas',
+  'Obi', 'Papadopoulos', 'Al-Rashidi', 'Ogundimu', 'Gupta', 'Al-Mansoori', 'Adeyinka', 'Kamau', 'Nguyen', 'Kapoor',
+  'Volkov', 'Smith', 'Johnson', 'Williams', 'Davies', 'Dubois', 'Silva', 'Fernandez', 'Gomez', 'Morales',
+  'Reyes', 'Takahashi', 'Suzuki', 'Sato', 'Watanabe', 'Kim', 'Park', 'Lee', 'Choi', 'Ali',
+  'Mansour', 'Suleiman', 'Bakr', 'Nasser', 'Fayed', 'Darwish', 'Habib', 'Abadi', 'Jaber', 'Zaki'
+];
+
+const GIVEAWAY_COUNTRIES = [
+  'United Arab Emirates', 'Pakistan', 'Mexico', 'Ireland', 'India', 'Poland', 'Ghana', 'Nigeria', 'Brazil',
+  'Romania', 'Kenya', 'Morocco', 'Oman', 'Senegal', 'Saudi Arabia', 'Portugal', 'Egypt', 'Germany',
+  'Jordan', 'Bangladesh', 'Italy', 'United Kingdom', 'Kuwait', 'Spain', 'Argentina', 'Japan', 'Colombia',
+  'Greece', 'Czech Republic', 'Vietnam', 'United States', 'Canada', 'Australia', 'South Africa',
+  'Singapore', 'Malaysia', 'France', 'Netherlands', 'Turkey', 'Philippines', 'Indonesia', 'Thailand',
+  'Chile', 'Sweden', 'Switzerland', 'Austria', 'Norway', 'Qatar', 'Bahrain'
+];
+
+const GIVEAWAY_TIERS = [
+  '$5,000 Unlimited',
+  '$5,000',
+  '$25,000',
+  '$50,000',
+  '$100,000',
+  '$150,000'
+];
+
+const GIVEAWAY_EMAIL_DOMAINS = [
+  'gmail.com',
+  'gmail.com',
+  'gmail.com',
+  'yahoo.com',
+  'outlook.com',
+  'hotmail.com',
+  'icloud.com',
+  'proton.me'
+];
+
+let _isGiveawaySyncing = false;
+let _lastGiveawaySyncTs = 0;
+
+// Autonomous state helper: seeds today if missing & resolves daily winners strictly from seed data
+async function ensureDailyGiveawayState(force = false) {
+  const nowMs = Date.now();
+  if (_isGiveawaySyncing) return;
+  if (!force && nowMs - _lastGiveawaySyncTs < 60000) {
+    // Throttled to max once per minute
+    return;
+  }
+  _isGiveawaySyncing = true;
+  _lastGiveawaySyncTs = nowMs;
+
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    const now = new Date();
+
+    // ── 1. HISTORICAL & DAILY WINNER SELECTION ─────────────────
+    // Draw closes daily at 14:30 UTC (8:00 PM IST).
+    // If today is past 14:30 UTC, today's winner can be selected.
+    // If before 14:30 UTC, winners are required through yesterday.
+    const isTodayClosed = (now.getUTCHours() > 14) || (now.getUTCHours() === 14 && now.getUTCMinutes() >= 30);
+
+    const yesterdayDate = new Date();
+    yesterdayDate.setUTCDate(yesterdayDate.getUTCDate() - 1);
+    const yesterdayStr = yesterdayDate.toISOString().split('T')[0];
+
+    const targetEndDayStr = isTodayClosed ? today : yesterdayStr;
+
+    // Check last 30 days to ensure continuous rolling winners board
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setUTCDate(thirtyDaysAgo.getUTCDate() - 30);
+    const thirtyDaysAgoStr = thirtyDaysAgo.toISOString().split('T')[0];
+
+    const { data: existingWinners } = await _sb
+      .from('giveaway_winners')
+      .select('draw_date')
+      .gte('draw_date', thirtyDaysAgoStr);
+
+    const existingWinnerDates = new Set((existingWinners || []).map(w => w.draw_date));
+
+    let checkDate = new Date(thirtyDaysAgoStr + 'T00:00:00Z');
+    const endDate = new Date(targetEndDayStr + 'T00:00:00Z');
+
+    while (checkDate <= endDate) {
+      const dStr = checkDate.toISOString().split('T')[0];
+
+      if (!existingWinnerDates.has(dStr)) {
+        // Winner missing for this day: pick STRICTLY from fake seed data (never real users!)
+        const { data: fakeEntries } = await _sb
+          .from('giveaway_entries')
+          .select('id, full_name, country, prize_tier, draw_date')
+          .eq('draw_date', dStr)
+          .eq('is_fake', true);
+
+        let chosen = null;
+        if (fakeEntries && fakeEntries.length > 0) {
+          chosen = fakeEntries[Math.floor(Math.random() * fakeEntries.length)];
+          // Mark as winner in entries table
+          await _sb.from('giveaway_entries').update({ is_winner: true }).eq('id', chosen.id);
+        } else {
+          // If no seeded entries exist for this past day, generate a realistic winner record
+          const fn = GIVEAWAY_FIRST_NAMES[Math.floor(Math.random() * GIVEAWAY_FIRST_NAMES.length)];
+          const ln = GIVEAWAY_LAST_NAMES[Math.floor(Math.random() * GIVEAWAY_LAST_NAMES.length)];
+          chosen = {
+            full_name: `${fn} ${ln}`,
+            country: GIVEAWAY_COUNTRIES[Math.floor(Math.random() * GIVEAWAY_COUNTRIES.length)],
+            prize_tier: GIVEAWAY_TIERS[Math.floor(Math.random() * GIVEAWAY_TIERS.length)],
+            draw_date: dStr
+          };
+        }
+
+        const winTier = chosen.prize_tier || '$5,000 Unlimited';
+        await _sb.from('giveaway_winners').insert({
+          user_id: null, // Always null: strictly seed winners, never real users
+          full_name: chosen.full_name,
+          country: chosen.country || 'United Arab Emirates',
+          account_size: winTier,
+          prize_tier: winTier,
+          draw_date: dStr,
+          announced_at: new Date(checkDate.getTime() + (14.5 * 3600 * 1000)).toISOString()
+        });
+
+        existingWinnerDates.add(dStr);
+      }
+      checkDate.setUTCDate(checkDate.getUTCDate() + 1);
+    }
+
+    // ── 2. SEED TODAY'S PARTICIPANTS (~250 entries) ───────────
+    const { count: currentTodayCount } = await _sb
+      .from('giveaway_entries')
+      .select('id', { count: 'exact', head: true })
+      .eq('draw_date', today);
+
+    const neededToday = Math.max(0, 250 - (currentTodayCount || 0));
+    if (neededToday > 0) {
+      const dayStart = new Date(today + 'T00:00:00Z').getTime();
+      const currentMs = Date.now();
+      const toInsert = [];
+
+      for (let i = 0; i < neededToday; i++) {
+        const fn = GIVEAWAY_FIRST_NAMES[Math.floor(Math.random() * GIVEAWAY_FIRST_NAMES.length)];
+        const ln = GIVEAWAY_LAST_NAMES[Math.floor(Math.random() * GIVEAWAY_LAST_NAMES.length)];
+        const country = GIVEAWAY_COUNTRIES[Math.floor(Math.random() * GIVEAWAY_COUNTRIES.length)];
+        const prize_tier = GIVEAWAY_TIERS[Math.floor(Math.random() * GIVEAWAY_TIERS.length)];
+        const domain = GIVEAWAY_EMAIL_DOMAINS[Math.floor(Math.random() * GIVEAWAY_EMAIL_DOMAINS.length)];
+        const cleanName = (fn + ln).toLowerCase().replace(/[^a-z]/g, '');
+        const emailNum = Math.floor(Math.random() * 9000 + 1000);
+
+        // Distribute timestamps naturally between 00:00 UTC and current time
+        // Include recent timestamps so the live feed has fresh activity
+        const randomTime = new Date(dayStart + Math.random() * Math.max(1000, currentMs - dayStart));
+
+        toInsert.push({
+          user_id: null,
+          full_name: `${fn} ${ln}`,
+          email: `${cleanName}${emailNum}@${domain}`,
+          country,
+          prize_tier,
+          draw_date: today,
+          is_fake: true,
+          created_at: randomTime.toISOString()
+        });
+      }
+
+      // Batch insert in chunks of 50
+      for (let i = 0; i < toInsert.length; i += 50) {
+        const batch = toInsert.slice(i, i + 50);
+        const { error: batchErr } = await _sb.from('giveaway_entries').insert(batch);
+        if (batchErr) console.error('Error inserting giveaway seed batch:', batchErr.message);
+      }
+    }
+  } catch (err) {
+    console.error('Error in ensureDailyGiveawayState:', err);
+  } finally {
+    _isGiveawaySyncing = false;
+  }
+}
+
+// Public: get today's stats + recent winners (self-heals automatically)
 app.get('/api/giveaway/today', async (req, res) => {
   try {
+    // Automatically guarantee today is seeded and past winners are up-to-date
+    await ensureDailyGiveawayState();
+
     const today = new Date().toISOString().split('T')[0];
 
     // Total slot count today
@@ -290,14 +490,14 @@ app.get('/api/giveaway/today', async (req, res) => {
       .select('id', { count: 'exact', head: true })
       .eq('draw_date', today);
 
-    // Past winners (last 30)
+    // Past winners (last 30 days)
     const { data: winners } = await _sb
       .from('giveaway_winners')
       .select('full_name, country, account_size, draw_date')
       .order('draw_date', { ascending: false })
       .limit(30);
 
-    // Recent entries for live feed (last 10, no emails)
+    // Recent entries for live feed (last 50, no emails)
     const { data: feed } = await _sb
       .from('giveaway_entries')
       .select('full_name, country, created_at')
@@ -309,6 +509,17 @@ app.get('/api/giveaway/today', async (req, res) => {
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Vercel Cron Endpoint: scheduled daily rollover / check
+app.all('/api/cron/giveaway', async (req, res) => {
+  try {
+    await ensureDailyGiveawayState(true);
+    res.json({ success: true, timestamp: new Date().toISOString() });
+  } catch (e) {
+    console.error('Cron giveaway error:', e);
+    res.status(500).json({ error: 'Cron error' });
   }
 });
 
@@ -415,6 +626,9 @@ app.get('/api/admin/giveaway/entries', authMiddleware, adminOnly, async (req, re
   try {
     const today = new Date().toISOString().split('T')[0];
 
+    // Ensure state is synced
+    await ensureDailyGiveawayState();
+
     const { data: entries } = await _sb
       .from('giveaway_entries')
       .select('id, full_name, email, country, is_winner, created_at, ip_address, device_fingerprint, geo_city, geo_region, geo_isp, prize_tier, user_agent')
@@ -427,13 +641,22 @@ app.get('/api/admin/giveaway/entries', authMiddleware, adminOnly, async (req, re
       .select('id', { count: 'exact', head: true })
       .eq('draw_date', today);
 
-    res.json({ entries: entries || [], totalSlots: totalSlots || 0 });
+    // Fetch today's winner if already recorded
+    const { data: todayWinner } = await _sb
+      .from('giveaway_winners')
+      .select('full_name, country, account_size, draw_date')
+      .eq('draw_date', today)
+      .order('id', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    res.json({ entries: entries || [], totalSlots: totalSlots || 0, todayWinner: todayWinner || null });
   } catch (e) {
     res.status(500).json({ error: 'Server error' });
   }
 });
 
-// Admin: pick a winner
+// Admin: pick a winner manually (optional admin override)
 app.post('/api/admin/giveaway/pick-winner', authMiddleware, adminOnly, async (req, res) => {
   const { entry_id } = req.body;
   try {
@@ -461,52 +684,17 @@ app.post('/api/admin/giveaway/pick-winner', authMiddleware, adminOnly, async (re
   }
 });
 
-// Admin: seed 250+ fake entries
+// Admin: seed 250+ fake entries (manual trigger)
 app.post('/api/admin/giveaway/seed-fakes', authMiddleware, adminOnly, async (req, res) => {
-  const today = new Date().toISOString().split('T')[0];
-  
-  const firsts = ['Ahmed','Hamza','Carlos','Liam','Arjun','Sofia','David','Yusuf','Maria','Alex','Tariq','Elena','James','Fatima','Lucas','Andrei','Mohammed','Sarah','Rahul','Viktor','Amina','Daniel','Ivan','Priya','Omar','Anya','Samuel','Bilal','Julia','Kwame','Nadia','Leo','Rania','Emmanuel','Aisha','Marco','Zara','Felix','Deepak','Noura','Tunde','Carmen','Vikram','Layla','Kevin','Pita','Amara','Stefan','Riya','Musa','Hassan','Tomás','Amira','Chukwuemeka','Yuki','Darius','Fatou','Muhammad','Anastasia','Kwabena','Nasrin','Diego','Chiamaka','Petros','Zainab','Adebayo','Lena','Siddharth','Mariam','Olumide','Wanjiku','Miroslav','Thanh','Rohan','Fatoumata','Aleksei'];
-  const lasts = ['Al-Rashid','Khan','Mendez','O\'Brien','Sharma','Novak','Osei','Ibrahim','Santos','Kowalski','Hussain','Popescu','Mwangi','Al-Zahra','Ferreira','Ionescu','Al-Farsi','O\'Connor','Patel','Kovalev','Diallo','Okafor','Petrov','Nair','Abdullah','Koroleva','Asante','Malik','Martins','Asiedu','Hassan','Müller','Khalil','Adjei','Mohammed','Ricci','Ahmed','Mensah','Verma','Al-Hamdan','Adeyemi','López','Singh','Al-Amin','Otieno','Havili','Traoré','Nowak','Desai','Kone','Al-Mutairi','Krishnan','García','Benali','Nwachukwu','Tanaka','Zubair','Petrova','Hosseini','Vargas','Obi','Papadopoulos','Al-Rashidi','Ogundimu','Gupta','Al-Mansoori','Adeyinka','Kamau','Nguyen','Kapoor','Volkov'];
-  const countries = ['UAE','Pakistan','Mexico','Ireland','India','Poland','Ghana','Nigeria','Brazil','Romania','Kenya','Morocco','Oman','Ukraine','Senegal','Bulgaria','Saudi Arabia','Russia','Portugal','Egypt','Germany','Jordan','Bangladesh','Italy','UK','Kuwait','Spain','Lebanon','Fiji','Ivory Coast','Mali','Argentina','Algeria','Japan','Iran','Colombia','Greece','Iraq','Czech Republic','Vietnam'];
-
   try {
-    const { count: current } = await _sb
+    await ensureDailyGiveawayState(true);
+    const today = new Date().toISOString().split('T')[0];
+    const { count: totalSlots } = await _sb
       .from('giveaway_entries')
       .select('id', { count: 'exact', head: true })
       .eq('draw_date', today);
 
-    const needed = Math.max(0, 250 - (current || 0)); // Keep ~250 fakes active
-    if (needed === 0) return res.json({ success: true, inserted: 0, message: 'Already at 250+ entries' });
-
-    const dayStart = new Date(today + 'T00:00:00Z').getTime();
-    const now = Date.now();
-    const toInsert = [];
-
-    for (let i = 0; i < needed; i++) {
-      const fn = firsts[Math.floor(Math.random() * firsts.length)];
-      const ln = lasts[Math.floor(Math.random() * lasts.length)];
-      const country = countries[Math.floor(Math.random() * countries.length)];
-      const randomTime = new Date(dayStart + Math.random() * (now - dayStart));
-      
-      toInsert.push({
-        user_id: null,
-        full_name: `${fn} ${ln}`,
-        email: fn.toLowerCase() + ln.toLowerCase().replace(/[^a-z]/g, '') + Math.floor(Math.random() * 9000 + 1000) + '@gmail.com',
-        country,
-        draw_date: today,
-        is_fake: true,
-        created_at: randomTime.toISOString()
-      });
-    }
-
-    // Insert in batches of 50 to avoid Supabase limits
-    for (let i = 0; i < toInsert.length; i += 50) {
-      const batch = toInsert.slice(i, i + 50);
-      const { error } = await _sb.from('giveaway_entries').insert(batch);
-      if (error) throw new Error(error.message);
-    }
-
-    res.json({ success: true, inserted: toInsert.length });
+    res.json({ success: true, totalSlots: totalSlots || 0, message: 'Giveaway entries and daily state refreshed successfully' });
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: 'Server error' });

@@ -597,15 +597,19 @@ async function loadGiveaway() {
     const res = await fetch('/api/admin/giveaway/entries', {
       headers: { Authorization: 'Bearer ' + token }
     });
-    const { entries, totalSlots } = await res.json();
+    const { entries, totalSlots, todayWinner } = await res.json();
 
     document.getElementById('gTotalSlots').textContent = totalSlots;
     document.getElementById('gRealEntries').textContent = entries.length;
 
     const winners = entries.filter(e => e.is_winner);
-    document.getElementById('gWinnerCount').textContent = winners.length > 0
-      ? '🏆 ' + winners[0].full_name
-      : 'Not picked yet';
+    if (todayWinner) {
+      document.getElementById('gWinnerCount').textContent = '🏆 ' + todayWinner.full_name + ' (' + (todayWinner.country || 'Global') + ' • ' + (todayWinner.account_size || '$5,000') + ')';
+    } else if (winners.length > 0) {
+      document.getElementById('gWinnerCount').textContent = '🏆 ' + winners[0].full_name;
+    } else {
+      document.getElementById('gWinnerCount').textContent = 'Drawing at 8:00 PM IST (Auto)';
+    }
 
     const tbody = document.getElementById('giveawayTable');
     if (!entries.length) {
