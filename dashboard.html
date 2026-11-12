@@ -475,18 +475,22 @@ input:-webkit-autofill:active{
 
       <!-- ═══ ELITE PARTNER PROGRAM ════════════════════════════ -->
       <div id="section-affiliate" class="section-panel space-y-6 pb-20">
-        <!-- Header -->
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 fade-up">
+        <!-- Header & Individual Affiliate Link -->
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 fade-up">
           <div>
             <div class="text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant mb-1">Fundings4U Affiliate Ecosystem</div>
             <div class="text-2xl font-bold font-sora text-on-surface flex items-center gap-2">Elite Partner Program</div>
           </div>
-          <div class="flex gap-2">
-            <div class="bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-4 py-2 flex items-center gap-2">
-              <span class="material-symbols-outlined text-on-surface-variant/50" style="font-size:16px">link</span>
-              <span class="text-xs font-mono font-semibold text-primary" id="affCodeDisplay">Loading...</span>
+          <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+            <div class="bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 flex items-center gap-2 min-w-0">
+              <span class="material-symbols-outlined text-primary/70 shrink-0" style="font-size:16px">link</span>
+              <input type="text" id="affLinkInput" readonly value="https://fundings4u.com/signup?ref=..." class="bg-transparent text-xs font-mono text-primary outline-none w-full sm:w-72 truncate cursor-pointer" onclick="this.select();copyAffLink()"/>
             </div>
-            <button class="bg-primary/10 border border-primary/20 text-primary px-4 py-2 rounded-lg text-xs font-semibold hover:bg-primary/20 transition-colors" onclick="copyAffLink()">Copy Link</button>
+            <button type="button" class="bg-primary text-surface font-bold px-4 py-2 rounded-lg text-xs hover:opacity-90 transition-opacity shrink-0 cursor-pointer" onclick="copyAffLink()">Copy Link</button>
+            <button type="button" class="bg-primary/10 border border-primary/20 text-primary px-3 py-2 rounded-lg text-xs font-mono font-semibold hover:bg-primary/20 transition-colors shrink-0 cursor-pointer flex items-center justify-center gap-1.5" onclick="copyAffCode()" title="Copy Affiliate Code">
+              <span id="affCodeDisplay">Loading...</span>
+              <span class="material-symbols-outlined" style="font-size:14px">content_copy</span>
+            </button>
           </div>
         </div>
 
@@ -583,6 +587,34 @@ input:-webkit-autofill:active{
           </div>
         </div>
 
+        <!-- Referred Traders List -->
+        <div class="glass rounded-2xl p-6 md:p-8 fade-up" style="animation-delay:.12s">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-5">
+            <div>
+              <div class="text-lg font-bold font-sora text-on-surface">Referred Traders</div>
+              <div class="text-xs text-on-surface-variant">Traders registered using your individual affiliate link</div>
+            </div>
+            <div class="text-xs font-mono text-primary font-semibold" id="affReferredBadge">0 Traders</div>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="border-b border-outline-variant/15 text-[10px] uppercase tracking-widest text-on-surface-variant">
+                  <th class="py-3 pr-4">Trader</th>
+                  <th class="py-3 pr-4">Email</th>
+                  <th class="py-3 pr-4">Registered Date</th>
+                  <th class="py-3 pr-4">Status</th>
+                  <th class="py-3 pr-4">Purchases</th>
+                  <th class="py-3 text-right">Your Commission</th>
+                </tr>
+              </thead>
+              <tbody id="affReferredTable" class="divide-y divide-outline-variant/10 text-xs">
+                <tr><td colspan="6" class="py-8 text-center text-on-surface-variant">Share your affiliate link to start recording traders!</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
         <!-- Milestones -->
         <div class="glass rounded-2xl p-6 md:p-8 fade-up" style="animation-delay:.15s">
           <div class="text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant mb-6">Lifetime Milestone Rewards</div>
@@ -645,9 +677,41 @@ document.getElementById('profEmail').textContent = userData.email || '—';
 document.getElementById('profInputName').value = userData.full_name || '';
 document.getElementById('profInputEmail').value = userData.email || '';
 
-// Affiliate code from user id
-const affCodeStr = 'F4U' + String(userData.id || '00000').padStart(5,'0');
-// affCodeDisplay is updated dynamically when Affiliate section loads
+// Affiliate code & link from user id (pre-populated immediately & confirmed from API)
+let currentAffCode = userData.id ? ('F4U' + String(userData.id).padStart(5, '0')) : '';
+let currentAffLink = currentAffCode ? `https://fundings4u.com/signup?ref=${currentAffCode}` : '';
+if (currentAffCode) {
+  const codeEl = document.getElementById('affCodeDisplay');
+  const linkEl = document.getElementById('affLinkInput');
+  if (codeEl) codeEl.textContent = currentAffCode;
+  if (linkEl) linkEl.value = currentAffLink;
+}
+
+function escHtml(str) {
+  return String(str || '').replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
+}
+
+async function copyToClipboard(text, toastMsg) {
+  if (!text) return showToast('Loading affiliate info, please wait...');
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(text);
+    } else {
+      throw new Error('Clipboard fallback');
+    }
+  } catch (e) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    try { document.execCommand('copy'); } catch (err) {}
+    document.body.removeChild(ta);
+  }
+  showToast(toastMsg);
+}
 
 function logout() { localStorage.clear(); window.location.replace('/login'); }
 
@@ -702,14 +766,48 @@ async function loadAffiliateData() {
     if (!res.ok) return;
     const stats = await res.json();
     
-    // Header
-    const affCode = 'F4U' + String(userData.id || '00000').padStart(5,'0');
+    // Header & Individual Link
+    const affCode = stats.affCode || ('F4U' + String(userData.id || '00000').padStart(5,'0'));
+    const affLink = stats.affLink || `https://fundings4u.com/signup?ref=${affCode}`;
+    currentAffCode = affCode;
+    currentAffLink = affLink;
     document.getElementById('affCodeDisplay').textContent = affCode;
+    const linkInput = document.getElementById('affLinkInput');
+    if (linkInput) linkInput.value = affLink;
     
     // Main Stats
     document.getElementById('affTotalRefs').textContent = stats.totalReferrals;
     document.getElementById('affTotalRev').textContent = fmtD(stats.totalRevenue);
     document.getElementById('affTotalEarned').textContent = fmtD(stats.totalEarned);
+    
+    // Referred Traders Table
+    const refBadge = document.getElementById('affReferredBadge');
+    const refTbody = document.getElementById('affReferredTable');
+    const refs = stats.referredTraders || [];
+    if (refBadge) refBadge.textContent = `${refs.length} Trader${refs.length === 1 ? '' : 's'}`;
+    if (refTbody) {
+      if (refs.length === 0) {
+        refTbody.innerHTML = '<tr><td colspan="6" class="py-8 text-center text-on-surface-variant">No traders registered via your link yet. Share your link above to start earning!</td></tr>';
+      } else {
+        refTbody.innerHTML = refs.map(r => {
+          const statusCls = r.status === 'Funded Active'
+            ? 'bg-green-500/15 text-green-400 border border-green-500/30'
+            : (r.status === 'Purchased'
+              ? 'bg-primary/15 text-primary border border-primary/30'
+              : 'bg-surface-container-lowest text-on-surface-variant border border-outline-variant/20');
+          return `
+            <tr class="hover:bg-white/[0.02]">
+              <td class="py-3 pr-4 font-semibold text-on-surface">${escHtml(r.full_name)}</td>
+              <td class="py-3 pr-4 font-mono text-on-surface-variant">${escHtml(r.email)}</td>
+              <td class="py-3 pr-4 text-on-surface-variant">${r.joined_at ? new Date(r.joined_at).toLocaleDateString('en-GB', {day:'numeric',month:'short',year:'numeric'}) : '—'}</td>
+              <td class="py-3 pr-4"><span class="px-2 py-0.5 rounded-full text-[10px] font-semibold ${statusCls}">${escHtml(r.status)}</span></td>
+              <td class="py-3 pr-4 font-mono text-on-surface">${fmtD(r.purchased_usd || 0)}</td>
+              <td class="py-3 text-right font-mono font-bold text-primary">${fmtD(r.commission_earned || 0)}</td>
+            </tr>
+          `;
+        }).join('');
+      }
+    }
     
     // Tier Card
     document.getElementById('tierName').textContent = stats.tier;
@@ -796,9 +894,14 @@ async function loadAffLeaderboard() {
 }
 
 function copyAffLink() {
-  const affCode = 'F4U' + String(userData.id || '00000').padStart(5,'0');
-  navigator.clipboard.writeText(`https://fundings4u.com/signup?ref=${affCode}`);
-  showToast('Affiliate Link Copied!');
+  const affCode = currentAffCode || ('F4U' + String(userData.id || '00000').padStart(5,'0'));
+  const affLink = currentAffLink || `https://fundings4u.com/signup?ref=${affCode}`;
+  copyToClipboard(affLink, 'Affiliate Link Copied!');
+}
+
+function copyAffCode() {
+  const affCode = currentAffCode || ('F4U' + String(userData.id || '00000').padStart(5,'0'));
+  copyToClipboard(affCode, 'Affiliate Code Copied!');
 }
 
 
@@ -1042,14 +1145,12 @@ async function loadDashboard() {
   } catch(e){console.error(e);}
 }
 
-// ── Affiliate copy ────────────────────────────────────────────
+// ── Toast ────────────────────────────────────────────
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg; t.style.opacity='1'; t.style.transform='translateY(0)';
   setTimeout(()=>{t.style.opacity='0';t.style.transform='translateY(20px)'},2000);
 }
-function copyAffLink() { navigator.clipboard.writeText(document.getElementById('affLink').textContent); showToast('Link copied!'); }
-function copyAffCode() { navigator.clipboard.writeText(document.getElementById('affCode').textContent); showToast('Code copied!'); }
 
 function copyMt5Password() {
   if (!window.realMt5Password) return;
@@ -1130,6 +1231,14 @@ renderLeaderboard();
 
 // Set mobile home active
 document.getElementById('mob-overview').style.color='#cebdff';
+
+// Support deep-link tab (e.g. /dashboard?tab=affiliate)
+(function() {
+  const tab = new URLSearchParams(window.location.search).get('tab');
+  if (tab && document.getElementById('section-' + tab)) {
+    showSection(tab);
+  }
+})();
 </script>
 </body>
 </html>

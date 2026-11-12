@@ -112,6 +112,7 @@ tr:hover td{background:rgba(124,58,237,0.03)}
   <nav class="sb-nav">
     <div class="sb-section" style="margin-top:12px">Management</div>
     <a class="sb-link active" id="navTraders" onclick="showSection('traders')"><span class="icon">👥</span> All Traders</a>
+    <a class="sb-link" id="navAffiliation" onclick="showSection('affiliation')"><span class="icon">🤝</span> Affiliation</a>
     <a class="sb-link" id="navGiveaway" onclick="showSection('giveaway')"><span class="icon">🎰</span> Daily Giveaway</a>
     <a class="sb-link"><span class="icon">📊</span> Analytics</a>
     <a class="sb-link"><span class="icon">💸</span> Payouts</a>
@@ -203,6 +204,128 @@ tr:hover td{background:rgba(124,58,237,0.03)}
     </div>
   </div>
 </main>
+
+<!-- Affiliation Section (hidden by default) -->
+<main class="main" id="sectionAffiliation" style="display:none">
+  <div class="content">
+    <div class="admin-stats">
+      <div class="stat-card"><div class="stat-label">Active Partners</div><div class="stat-val" id="affStatPartners">—</div></div>
+      <div class="stat-card"><div class="stat-label">Referred Traders</div><div class="stat-val" id="affStatRefs">—</div></div>
+      <div class="stat-card"><div class="stat-label">Affiliate Revenue</div><div class="stat-val" id="affStatRev">—</div></div>
+      <div class="stat-card"><div class="stat-label">Commission Given</div><div class="stat-val" id="affStatComm" style="color:#4ade80">—</div></div>
+    </div>
+
+    <!-- Commission Percentage Tiers Reference -->
+    <div class="section-card" style="margin-bottom:20px;padding:18px 24px">
+      <div style="font-size:13px;font-weight:700;color:#e3e0f3;margin-bottom:12px">📊 Commission Percentage Given Per Person (Tier Rates)</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px">
+        <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:12px 14px">
+          <div style="font-size:11px;color:#cebdff;font-weight:700;text-transform:uppercase">Scout ($0–$1,499 Rev)</div>
+          <div style="font-size:18px;font-weight:800;color:#fff;margin:4px 0">10% Commission</div>
+          <div style="font-size:11px;color:#7a718f">10% Discount • Success Share Locked</div>
+        </div>
+        <div style="background:rgba(52,211,153,0.05);border:1px solid rgba(52,211,153,0.2);border-radius:10px;padding:12px 14px">
+          <div style="font-size:11px;color:#34d399;font-weight:700;text-transform:uppercase">Hunter ($1,500–$5,999 Rev)</div>
+          <div style="font-size:18px;font-weight:800;color:#fff;margin:4px 0">15% Commission</div>
+          <div style="font-size:11px;color:#7a718f">15% Discount • +5% Success Share™</div>
+        </div>
+        <div style="background:rgba(96,165,250,0.05);border:1px solid rgba(96,165,250,0.25);border-radius:10px;padding:12px 14px">
+          <div style="font-size:11px;color:#60a5fa;font-weight:700;text-transform:uppercase">Apex ($6,000–$24,999 Rev)</div>
+          <div style="font-size:18px;font-weight:800;color:#fff;margin:4px 0">20% Commission</div>
+          <div style="font-size:11px;color:#7a718f">20% Discount • +5% Success Share™</div>
+        </div>
+        <div style="background:rgba(245,200,66,0.06);border:1px solid rgba(245,200,66,0.3);border-radius:10px;padding:12px 14px">
+          <div style="font-size:11px;color:#f5c842;font-weight:700;text-transform:uppercase">Legend ($25,000+ Rev)</div>
+          <div style="font-size:18px;font-weight:800;color:#fff;margin:4px 0">30% Commission</div>
+          <div style="font-size:11px;color:#7a718f">25% Discount • +5% Success Share™</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Per-Person Affiliation Table -->
+    <div class="section-card" style="margin-bottom:24px">
+      <div class="section-head">
+        <div>
+          <div class="section-title">🤝 Per-Person Affiliation & Commission %</div>
+          <div style="font-size:12px;color:#7a718f;margin-top:4px" id="affTableSubtitle">Individual affiliate links, commission percentages, and referred traders per person</div>
+        </div>
+        <button class="btn-assign" onclick="loadAffiliates()" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);color:#e3e0f3">🔄 Refresh</button>
+      </div>
+
+      <div class="controls-bar">
+        <div class="search-box">
+          <span style="font-size:14px;color:#7a718f">🔍</span>
+          <input type="text" id="affSearchInput" placeholder="Search by person name, email, or F4U code..." oninput="handleAffSearch()"/>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <select id="affFilterSelect" onchange="affPage=1;loadAffiliates()" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);color:#e3e0f3;border-radius:8px;padding:7px 12px;font-size:12px;outline:none">
+            <option value="all" style="background:#0e0c1e">All People (Partners First)</option>
+            <option value="active" style="background:#0e0c1e">Active Partners Only</option>
+          </select>
+        </div>
+      </div>
+
+      <table>
+        <thead><tr>
+          <th>Person / Trader</th>
+          <th>Individual Affiliate Link</th>
+          <th>Tier</th>
+          <th>Commission %</th>
+          <th>Success Share %</th>
+          <th>Referred Traders</th>
+          <th>Revenue</th>
+          <th>Commission Given</th>
+        </tr></thead>
+        <tbody id="affPartnersTable"><tr><td colspan="8" style="text-align:center;color:#635c79;padding:30px">Loading affiliation data...</td></tr></tbody>
+      </table>
+
+      <div class="pagination-wrap" id="affPaginationWrap" style="display:none">
+        <div class="pagination-info" id="affPaginationInfo">Showing 0-0 of 0</div>
+        <div class="pagination-pages" id="affPaginationBtns"></div>
+      </div>
+    </div>
+
+    <!-- Recent Referred Registrations -->
+    <div class="section-card">
+      <div class="section-head">
+        <div>
+          <div class="section-title">📋 Referred Traders Log</div>
+          <div style="font-size:12px;color:#7a718f;margin-top:4px">Every trader registered via an affiliate link</div>
+        </div>
+      </div>
+      <table>
+        <thead><tr>
+          <th>Referred Trader</th>
+          <th>Referred By (Partner)</th>
+          <th>Partner %</th>
+          <th>Registered Date</th>
+          <th>Purchases</th>
+          <th>Commission Earned</th>
+        </tr></thead>
+        <tbody id="affRecentRefsTable"><tr><td colspan="6" style="text-align:center;color:#635c79;padding:30px">No referred traders recorded yet.</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<!-- Referred Traders Detail Modal -->
+<div class="modal-overlay" id="affRefModal">
+  <div class="modal" style="max-width:660px">
+    <div class="modal-title" id="affModalTitle">Referred Traders</div>
+    <div class="modal-sub" id="affModalSub">Traders registered using this partner's link</div>
+    <div style="max-height:360px;overflow-y:auto;margin-bottom:16px">
+      <table>
+        <thead><tr>
+          <th>Trader</th><th>Email</th><th>Joined</th><th>Purchases</th><th>Commission</th>
+        </tr></thead>
+        <tbody id="affModalTable"></tbody>
+      </table>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="document.getElementById('affRefModal').classList.remove('open')">Close</button>
+    </div>
+  </div>
+</div>
 
 <!-- Assign Modal -->
 <div class="modal-overlay" id="modalOverlay">
@@ -571,23 +694,192 @@ setInterval(loadUsers, 30000);
 // ── Section switcher ──
 const sectionTraders = document.querySelector('.main');
 function showSection(section) {
-  const tradersMain = document.getElementById('navTraders').closest('nav').parentElement.nextElementSibling;
-  document.getElementById('sectionGiveaway').style.display = 'none';
-  // Re-show traders main
-  document.querySelectorAll('body > main').forEach(m => {
-    if (m.id !== 'sectionGiveaway') m.style.display = '';
-  });
+  document.querySelectorAll('body > main').forEach(m => { m.style.display = 'none'; });
   document.querySelectorAll('.sb-link').forEach(l => l.classList.remove('active'));
 
   if (section === 'giveaway') {
-    document.querySelectorAll('body > main').forEach(m => {
-      if (m.id !== 'sectionGiveaway') m.style.display = 'none';
-    });
     document.getElementById('sectionGiveaway').style.display = '';
     document.getElementById('navGiveaway').classList.add('active');
     loadGiveaway();
+  } else if (section === 'affiliation') {
+    document.getElementById('sectionAffiliation').style.display = '';
+    document.getElementById('navAffiliation').classList.add('active');
+    loadAffiliates();
   } else {
+    sectionTraders.style.display = '';
     document.getElementById('navTraders').classList.add('active');
+  }
+}
+
+// ── Affiliation Admin ──
+let affPage = 1;
+let affSearchTimer = null;
+let affPartnersCache = {};
+
+function escAdminHtml(str) {
+  return String(str || '').replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
+}
+
+function fmtMoney(n) {
+  return '$' + (parseFloat(n) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function handleAffSearch() {
+  clearTimeout(affSearchTimer);
+  affSearchTimer = setTimeout(() => { affPage = 1; loadAffiliates(); }, 300);
+}
+
+function goAffPage(p) {
+  affPage = p;
+  loadAffiliates();
+}
+
+function copyAdminAffLink(link) {
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(link).catch(() => {});
+  } else {
+    const ta = document.createElement('textarea');
+    ta.value = link;
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(ta);
+  }
+  showToast('Affiliate link copied!');
+}
+
+function openPartnerRefsModal(partnerId) {
+  const p = affPartnersCache[partnerId];
+  if (!p) return;
+  document.getElementById('affModalTitle').textContent = `${p.full_name} (${p.affCode})`;
+  document.getElementById('affModalSub').textContent = `Tier: ${p.tier} (${p.commissionRate}% Commission) • ${p.totalReferrals} Referred Traders`;
+  const tbody = document.getElementById('affModalTable');
+  const list = p.referredTraders || [];
+  if (!list.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#635c79;padding:24px">No referred traders registered yet.</td></tr>';
+  } else {
+    tbody.innerHTML = list.map(r => `
+      <tr>
+        <td><strong style="color:#e3e0f3">${escAdminHtml(r.full_name)}</strong></td>
+        <td style="color:#958da1;font-size:12px">${escAdminHtml(r.email)}</td>
+        <td style="color:#7a718f;font-size:12px">${r.joined_at ? new Date(r.joined_at).toLocaleDateString('en-GB', {day:'numeric',month:'short',year:'numeric'}) : '—'}</td>
+        <td style="font-family:monospace">${fmtMoney(r.purchased_usd)}</td>
+        <td style="font-family:monospace;color:#4ade80;font-weight:700">${fmtMoney(r.commission_earned)}</td>
+      </tr>
+    `).join('');
+  }
+  document.getElementById('affRefModal').classList.add('open');
+}
+
+async function loadAffiliates() {
+  try {
+    const search = (document.getElementById('affSearchInput')?.value || '').trim();
+    const filter = document.getElementById('affFilterSelect')?.value || 'all';
+    const params = new URLSearchParams({ page: affPage, limit: 100, filter });
+    if (search) params.set('search', search);
+
+    const res = await fetch(`/api/admin/affiliates?${params.toString()}`, {
+      headers: { Authorization: 'Bearer ' + token }
+    });
+    if (!res.ok) throw new Error('Failed to load affiliate data');
+    const data = await res.json();
+
+    const s = data.summary || {};
+    document.getElementById('affStatPartners').textContent = (s.activePartnersCount || 0).toLocaleString();
+    document.getElementById('affStatRefs').textContent = (s.totalReferrals || 0).toLocaleString();
+    document.getElementById('affStatRev').textContent = fmtMoney(s.totalRevenue || 0);
+    document.getElementById('affStatComm').textContent = fmtMoney(s.totalCommissions || 0);
+
+    const partners = data.partners || [];
+    affPartnersCache = {};
+    partners.forEach(p => { affPartnersCache[p.id] = p; });
+
+    const tbody = document.getElementById('affPartnersTable');
+    if (!partners.length) {
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#635c79;padding:30px">No matching affiliates or traders found.</td></tr>';
+    } else {
+      const tierColors = {
+        Scout: 'rgba(206,189,255,0.12);color:#cebdff;border:1px solid rgba(206,189,255,0.25)',
+        Hunter: 'rgba(52,211,153,0.12);color:#34d399;border:1px solid rgba(52,211,153,0.25)',
+        Apex: 'rgba(96,165,250,0.12);color:#60a5fa;border:1px solid rgba(96,165,250,0.25)',
+        Legend: 'rgba(245,200,66,0.15);color:#f5c842;border:1px solid rgba(245,200,66,0.35)'
+      };
+
+      tbody.innerHTML = partners.map(p => {
+        const badgeStyle = tierColors[p.tier] || tierColors.Scout;
+        const safeLink = escAdminHtml(p.affLink).replace(/'/g, "\\'");
+        return `
+          <tr>
+            <td>
+              <strong style="color:#e3e0f3">${escAdminHtml(p.full_name)}</strong>
+              <div style="font-size:11px;color:#7a718f">${escAdminHtml(p.email)} • #${p.id}</div>
+            </td>
+            <td>
+              <div style="display:flex;align-items:center;gap:6px">
+                <span style="font-family:monospace;font-size:12px;color:#d2bbff;background:rgba(124,58,237,0.12);padding:3px 8px;border-radius:6px">${escAdminHtml(p.affCode)}</span>
+                <button class="btn-assign" style="padding:4px 8px;font-size:11px" onclick="copyAdminAffLink('${safeLink}')" title="${escAdminHtml(p.affLink)}">📋 Copy Link</button>
+              </div>
+            </td>
+            <td><span class="status-pill" style="${badgeStyle}">${escAdminHtml(p.tier)}</span></td>
+            <td><strong style="color:#4ade80;font-size:14px">${p.commissionRate}%</strong> <span style="font-size:11px;color:#7a718f">(${p.discount}% disc)</span></td>
+            <td>${p.successShareRate > 0 ? '<span style="color:#34d399;font-weight:700">5% Payouts</span>' : '<span style="color:#635c79">0% (Scout)</span>'}</td>
+            <td>
+              ${p.totalReferrals > 0
+                ? `<button class="btn-assign" style="background:rgba(52,211,153,0.12);border:1px solid rgba(52,211,153,0.3);color:#34d399" onclick="openPartnerRefsModal(${p.id})">👥 ${p.totalReferrals} Trader${p.totalReferrals === 1 ? '' : 's'}</button>`
+                : '<span style="color:#635c79">0 Traders</span>'
+              }
+            </td>
+            <td style="font-family:monospace">${fmtMoney(p.totalRevenue)}</td>
+            <td style="font-family:monospace;color:#d2bbff;font-weight:700">${fmtMoney(p.totalEarned)}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // Pagination
+    const pag = data.pagination || { page: 1, limit: 100, totalItems: partners.length, totalPages: 1 };
+    const pWrap = document.getElementById('affPaginationWrap');
+    if (pag.totalItems > 0) {
+      pWrap.style.display = 'flex';
+      const start = (pag.page - 1) * pag.limit + 1;
+      const end = Math.min(pag.page * pag.limit, pag.totalItems);
+      document.getElementById('affPaginationInfo').textContent = `Showing ${start}-${end} of ${pag.totalItems.toLocaleString()}`;
+      let btns = `<button class="page-btn" ${pag.page <= 1 ? 'disabled' : ''} onclick="goAffPage(${pag.page - 1})">← Prev</button>`;
+      btns += `<span style="font-size:12px;color:#958da1;padding:0 6px">Page ${pag.page} / ${pag.totalPages}</span>`;
+      btns += `<button class="page-btn" ${pag.page >= pag.totalPages ? 'disabled' : ''} onclick="goAffPage(${pag.page + 1})">Next →</button>`;
+      document.getElementById('affPaginationBtns').innerHTML = btns;
+    } else {
+      pWrap.style.display = 'none';
+    }
+
+    // Recent Referred Traders Log
+    const recentRefs = data.recentReferrals || [];
+    const rTbody = document.getElementById('affRecentRefsTable');
+    if (!recentRefs.length) {
+      rTbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#635c79;padding:30px">No referred traders registered yet. Once users click an affiliate link and sign up, they will appear here automatically.</td></tr>';
+    } else {
+      rTbody.innerHTML = recentRefs.map(r => `
+        <tr>
+          <td>
+            <strong style="color:#e3e0f3">${escAdminHtml(r.full_name)}</strong>
+            <div style="font-size:11px;color:#7a718f">${escAdminHtml(r.email)}</div>
+          </td>
+          <td>
+            <strong style="color:#d2bbff">${escAdminHtml(r.referrer_name)}</strong>
+            <div style="font-size:11px;color:#7a718f;font-family:monospace">${escAdminHtml(r.referrer_code)}</div>
+          </td>
+          <td><strong style="color:#4ade80">${r.commissionRate}%</strong> <span style="font-size:11px;color:#7a718f">(${escAdminHtml(r.tier)})</span></td>
+          <td style="font-size:12px;color:#7a718f">${r.joined_at ? new Date(r.joined_at).toLocaleString('en-GB', {day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '—'}</td>
+          <td style="font-family:monospace">${fmtMoney(r.purchased_usd)}</td>
+          <td style="font-family:monospace;color:#4ade80;font-weight:700">${fmtMoney(r.commission_earned)}</td>
+        </tr>
+      `).join('');
+    }
+  } catch (e) {
+    console.error('Error loading affiliates:', e);
+    showToast('Error loading affiliation data', false);
   }
 }
 

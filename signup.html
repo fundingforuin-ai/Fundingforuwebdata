@@ -108,6 +108,11 @@ html,body{min-height:100%;background:#050510;font-family:'Inter',sans-serif;colo
       <div style="font-size:11px;color:#6b5c8a;margin-top:2px;">Create your account to proceed to payment.</div>
     </div>
 
+    <!-- Referral Banner (shown if user came via affiliate link) -->
+    <div id="refBanner" style="display:none;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.25);border-radius:12px;padding:10px 14px;margin-bottom:20px;align-items:center;justify-content:space-between;gap:8px;">
+      <div style="font-size:12px;color:#6ee7b7;font-weight:600;">🤝 Partner Referral Applied: <span id="refBannerCode" style="font-family:monospace;color:#fff;background:rgba(16,185,129,0.18);padding:2px 8px;border-radius:6px;margin-left:4px;"></span></div>
+    </div>
+
     <!-- Step Indicator -->
     <div class="steps">
       <div class="step-dot active" id="dot1">1</div>
@@ -176,6 +181,25 @@ html,body{min-height:100%;background:#050510;font-family:'Inter',sans-serif;colo
 
 <script>
 let step1Data = {};
+
+// Capture & persist affiliate referral code from URL or localStorage
+function getActiveRefCode() {
+  const params = new URLSearchParams(window.location.search);
+  const urlRef = (params.get('ref') || params.get('ref_code') || params.get('referral') || '').trim();
+  if (urlRef) {
+    localStorage.setItem('f4u_ref', urlRef);
+    return urlRef;
+  }
+  return (localStorage.getItem('f4u_ref') || '').trim();
+}
+
+(function() {
+  const activeRef = getActiveRefCode();
+  if (activeRef) {
+    document.getElementById('refBannerCode').textContent = activeRef.toUpperCase();
+    document.getElementById('refBanner').style.display = 'flex';
+  }
+})();
 
 // Show plan banner if user came from pricing page
 (function() {
@@ -255,7 +279,7 @@ async function doSignup() {
 
   btn.disabled = true; btn.innerHTML = '<span>Creating account...</span>';
   try {
-    const refCode = localStorage.getItem('f4u_ref');
+    const refCode = getActiveRefCode() || null;
     const res = await fetch('/api/signup', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -271,6 +295,7 @@ async function doSignup() {
     if (!res.ok) throw new Error(data.error || 'Signup failed');
     localStorage.setItem('f4u_token', data.token);
     localStorage.setItem('f4u_user', JSON.stringify(data.user));
+    localStorage.removeItem('f4u_ref');
     btn.innerHTML = '<span>✓ Account Created!</span>';
     const pendingPlan = localStorage.getItem('f4u_pending_plan');
     setTimeout(() => window.location.href = pendingPlan ? '/checkout' : '/dashboard', 700);

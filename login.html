@@ -179,6 +179,12 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
   }
 });
 
+// Capture ?ref= if landed on /login?ref=...
+(function() {
+  const ref = new URLSearchParams(window.location.search).get('ref');
+  if (ref) localStorage.setItem('f4u_ref', ref.trim());
+})();
+
 // Check if already logged in
 if (localStorage.getItem('f4u_token')) {
   const user = JSON.parse(localStorage.getItem('f4u_user') || '{}');

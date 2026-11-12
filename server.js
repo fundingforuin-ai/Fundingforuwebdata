@@ -31,6 +31,39 @@ function adminOnly(req, res, next) {
   next();
 }
 
+// ── Affiliate Helpers ────────────────────────────────────────
+function formatAffCode(userId) {
+  return 'F4U' + String(userId).padStart(5, '0');
+}
+
+function getAffiliateLink(userId) {
+  return `https://fundings4u.com/signup?ref=${formatAffCode(userId)}`;
+}
+
+function getAffiliateTierInfo(totalRevenue) {
+  const rev = parseFloat(totalRevenue) || 0;
+  if (rev >= 25000) {
+    return {
+      tier: 'Legend', discount: 25, commissionRate: 30, nextTierReq: null,
+      accountsAllocation: '2×$25K, 1×$50K', successShare: 'First 50 Traders', successShareRate: 5
+    };
+  } else if (rev >= 6000) {
+    return {
+      tier: 'Apex', discount: 20, commissionRate: 20, nextTierReq: 25000,
+      accountsAllocation: '2×$5K, 1×$25K', successShare: 'First 20 Traders', successShareRate: 5
+    };
+  } else if (rev >= 1500) {
+    return {
+      tier: 'Hunter', discount: 15, commissionRate: 15, nextTierReq: 6000,
+      accountsAllocation: '2×$5K', successShare: 'First 5 Traders', successShareRate: 5
+    };
+  }
+  return {
+    tier: 'Scout', discount: 10, commissionRate: 10, nextTierReq: 1500,
+    accountsAllocation: 'None', successShare: 'Locked', successShareRate: 0
+  };
+}
+
 // ── SIGNUP ──────────────────────────────────────────────────
 app.post('/api/signup', async (req, res) => {
   let { full_name, email, phone, password, ref_code } = req.body;
@@ -42,8 +75,9 @@ app.post('/api/signup', async (req, res) => {
   // Parse ref code (e.g. F4U00001 -> id 1)
   let referrerId = null;
   if (ref_code) {
-    const parsed = parseInt(ref_code.replace(/^F4U/i, ''), 10);
-    if (!isNaN(parsed)) referrerId = parsed;
+    const cleaned = String(ref_code).trim();
+    const parsed = parseInt(cleaned.replace(/^F4U/i, ''), 10);
+    if (!isNaN(parsed) && parsed > 0) referrerId = parsed;
   }
   
   try {
@@ -64,13 +98,17 @@ app.post('/api/signup', async (req, res) => {
     );
     const userId = rows[0].id;
     
-    // Save referral if exists
-    if (referrerId) {
+    // Save referral if exists (verify referrer exists & prevent self-referral)
+    if (referrerId && referrerId !== userId) {
       try {
-        await db.query(
-          'INSERT INTO referrals (referrer_id, referred_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
-          [referrerId, userId]
-        );
+        const { data: referrerUser } = await _sb.from('users').select('id').eq('id', referrerId).maybeSingle();
+        if (referrerUser) {
+          const { data: existingRef } = await _sb.from('referrals').select('id').eq('referred_id', userId).maybeSingle();
+          if (!existingRef) {
+            const { error: refErr } = await _sb.from('referrals').insert({ referrer_id: referrerId, referred_id: userId });
+            if (refErr) console.error('Failed to insert referral:', refErr.message);
+          }
+        }
       } catch (err) { console.error('Failed to save referral', err); }
     }
     
@@ -960,12 +998,8 @@ app.post('/api/checkout/webhook', express.json(), async (req, res) => {
         const referrerId = refRows[0].referrer_id;
         const { rows: revRows } = await db.query('SELECT SUM(amount_usd) as total FROM affiliate_sales WHERE referrer_id=$1', [referrerId]);
         const totalRev = parseFloat(revRows[0].total) || 0;
-        
-        let commRate = 0.10; // Scout
-        if (totalRev >= 25000) commRate = 0.30; // Legend
-        else if (totalRev >= 6000) commRate = 0.20; // Apex
-        else if (totalRev >= 1500) commRate = 0.15; // Hunter
-        
+        const tierInfo = getAffiliateTierInfo(totalRev);
+        const commRate = tierInfo.commissionRate / 100;
         const earned = parseFloat(order.price_usd) * commRate;
         await db.query(
           'INSERT INTO affiliate_sales (referrer_id, referred_id, order_id, amount_usd, commission_earned) VALUES ($1,$2,$3,$4,$5)',
@@ -1168,62 +1202,344 @@ app.get('/checkout', (req, res) => res.sendFile(path.join(__dirname, 'checkout.h
 app.get('/checkout/success', (req, res) => res.sendFile(path.join(__dirname, 'checkout.html')));
 
 // ── AFFILIATE ENDPOINTS ───────────────────────────────────────
+async function fetchAllTableRows(table, selectCols, orderCol = 'created_at') {
+  const all = [];
+  let from = 0;
+  const step = 1000;
+  while (true) {
+    const { data, error } = await _sb
+      .from(table)
+      .select(selectCols)
+      .order(orderCol, { ascending: false })
+      .range(from, from + step - 1);
+    if (error) throw new Error(error.message);
+    if (!data || data.length === 0) break;
+    all.push(...data);
+    if (data.length < step) break;
+    from += step;
+  }
+  return all;
+}
+
+async function fetchUsersByIds(ids) {
+  const map = {};
+  const uniqueIds = [...new Set(ids.filter(id => id != null))];
+  for (let i = 0; i < uniqueIds.length; i += 200) {
+    const chunk = uniqueIds.slice(i, i + 200);
+    const { data, error } = await _sb
+      .from('users')
+      .select('id, full_name, email, phone, role, created_at')
+      .in('id', chunk);
+    if (error) throw new Error(error.message);
+    (data || []).forEach(u => { map[u.id] = u; });
+  }
+  return map;
+}
+
 app.get('/api/affiliate/stats', authMiddleware, async (req, res) => {
   try {
     const userId = req.user.id;
-    
-    // 1. Total Referrals Count
-    const { rows: refCountRows } = await db.query('SELECT COUNT(*) as count FROM referrals WHERE referrer_id=$1', [userId]);
-    const totalReferrals = parseInt(refCountRows[0].count) || 0;
-    
-    // 2. Total Revenue & Commissions
-    const { rows: salesRows } = await db.query('SELECT SUM(amount_usd) as revenue, SUM(commission_earned) as earned FROM affiliate_sales WHERE referrer_id=$1', [userId]);
-    const totalRevenue = parseFloat(salesRows[0].revenue) || 0;
-    const totalEarned = parseFloat(salesRows[0].earned) || 0;
-    
+    const affCode = formatAffCode(userId);
+    const affLink = getAffiliateLink(userId);
+
+    // 1. All referrals for this user
+    const { data: refRows, error: refErr } = await _sb
+      .from('referrals')
+      .select('referred_id, created_at')
+      .eq('referrer_id', userId)
+      .order('created_at', { ascending: false });
+    if (refErr) throw new Error(refErr.message);
+
+    const referredIds = (refRows || []).map(r => r.referred_id);
+    const totalReferrals = referredIds.length;
+
+    // 2. All affiliate sales for this user
+    const { data: salesRows, error: salesErr } = await _sb
+      .from('affiliate_sales')
+      .select('referred_id, amount_usd, commission_earned, created_at')
+      .eq('referrer_id', userId);
+    if (salesErr) throw new Error(salesErr.message);
+
+    const totalRevenue = (salesRows || []).reduce((s, r) => s + parseFloat(r.amount_usd || 0), 0);
+    const totalEarned = (salesRows || []).reduce((s, r) => s + parseFloat(r.commission_earned || 0), 0);
+
     // 3. Determine Tier
-    let tier = 'Scout';
-    let discount = 10;
-    let commissionRate = 10;
-    let nextTierReq = 1500;
-    let accountsAllocation = 'None';
-    let successShare = '0';
-    
-    if (totalRevenue >= 25000) {
-      tier = 'Legend'; discount = 25; commissionRate = 30; nextTierReq = null;
-      accountsAllocation = '2×$25K, 1×$50K'; successShare = 'First 50 Traders';
-    } else if (totalRevenue >= 6000) {
-      tier = 'Apex'; discount = 20; commissionRate = 20; nextTierReq = 25000;
-      accountsAllocation = '2×$5K, 1×$25K'; successShare = 'First 20 Traders';
-    } else if (totalRevenue >= 1500) {
-      tier = 'Hunter'; discount = 15; commissionRate = 15; nextTierReq = 6000;
-      accountsAllocation = '2×$5K'; successShare = 'First 5 Traders';
-    }
-    
-    // 4. Funded Traders Count (for Success Share progress)
-    // Find all users this person referred
-    const { rows: referredRows } = await db.query('SELECT referred_id FROM referrals WHERE referrer_id=$1', [userId]);
-    const referredIds = referredRows.map(r => r.referred_id);
+    const tierInfo = getAffiliateTierInfo(totalRevenue);
+
+    // 4. Build referredTraders list & fundedCount
     let fundedCount = 0;
+    let referredTraders = [];
+
     if (referredIds.length > 0) {
-       const { rows: fundedRows } = await db.query('SELECT COUNT(DISTINCT user_id) as count FROM trading_accounts WHERE user_id = ANY($1) AND status = $2', [referredIds, 'active']);
-       fundedCount = parseInt(fundedRows[0].count) || 0;
+      const userMap = await fetchUsersByIds(referredIds);
+
+      const { data: accounts } = await _sb
+        .from('trading_accounts')
+        .select('user_id, status, account_size')
+        .in('user_id', referredIds);
+
+      const activeUserSet = new Set();
+      const anyAccountSet = new Set();
+      (accounts || []).forEach(a => {
+        anyAccountSet.add(a.user_id);
+        if (a.status === 'active') activeUserSet.add(a.user_id);
+      });
+      fundedCount = activeUserSet.size;
+
+      // Aggregate sales per referred user
+      const salesByReferred = {};
+      (salesRows || []).forEach(s => {
+        if (!salesByReferred[s.referred_id]) salesByReferred[s.referred_id] = { purchased: 0, commission: 0 };
+        salesByReferred[s.referred_id].purchased += parseFloat(s.amount_usd || 0);
+        salesByReferred[s.referred_id].commission += parseFloat(s.commission_earned || 0);
+      });
+
+      referredTraders = (refRows || []).map(r => {
+        const u = userMap[r.referred_id] || {};
+        const s = salesByReferred[r.referred_id] || { purchased: 0, commission: 0 };
+        let status = 'Registered';
+        if (activeUserSet.has(r.referred_id)) status = 'Funded Active';
+        else if (anyAccountSet.has(r.referred_id) || s.purchased > 0) status = 'Purchased';
+
+        return {
+          id: r.referred_id,
+          full_name: u.full_name || `Trader #${r.referred_id}`,
+          email: u.email || '—',
+          joined_at: r.created_at || u.created_at,
+          purchased_usd: s.purchased,
+          commission_earned: s.commission,
+          status
+        };
+      });
     }
-    
+
     res.json({
+      affCode,
+      affLink,
       totalReferrals,
       totalRevenue,
       totalEarned,
-      tier,
-      discount,
-      commissionRate,
-      nextTierReq,
-      accountsAllocation,
-      successShare,
-      fundedCount
+      ...tierInfo,
+      fundedCount,
+      referredTraders
     });
   } catch (err) {
     console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Admin: full Affiliation overview (per-person commission %, links, referrals)
+app.get('/api/admin/affiliates', authMiddleware, adminOnly, async (req, res) => {
+  try {
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const limit = Math.max(1, Math.min(200, parseInt(req.query.limit, 10) || 100));
+    const search = (req.query.search || '').trim();
+    const filter = req.query.filter || 'all'; // 'all' | 'active'
+
+    const [allReferrals, allSales, tradersCountRes] = await Promise.all([
+      fetchAllTableRows('referrals', 'id, referrer_id, referred_id, created_at'),
+      fetchAllTableRows('affiliate_sales', 'id, referrer_id, referred_id, order_id, amount_usd, commission_earned, sale_type, created_at'),
+      _sb.from('users').select('id', { count: 'exact', head: true }).neq('role', 'admin')
+    ]);
+
+    const totalTraders = tradersCountRes.count || 0;
+
+    // Group referrals and sales by referrer_id
+    const refByPartner = {};
+    allReferrals.forEach(r => {
+      if (!refByPartner[r.referrer_id]) refByPartner[r.referrer_id] = [];
+      refByPartner[r.referrer_id].push(r);
+    });
+
+    const salesByPartner = {};
+    const salesByPair = {};
+    let totalRevenue = 0;
+    let totalCommissions = 0;
+
+    allSales.forEach(s => {
+      const amt = parseFloat(s.amount_usd || 0);
+      const comm = parseFloat(s.commission_earned || 0);
+      totalRevenue += amt;
+      totalCommissions += comm;
+
+      if (!salesByPartner[s.referrer_id]) salesByPartner[s.referrer_id] = { revenue: 0, earned: 0 };
+      salesByPartner[s.referrer_id].revenue += amt;
+      salesByPartner[s.referrer_id].earned += comm;
+
+      const pairKey = `${s.referrer_id}:${s.referred_id}`;
+      if (!salesByPair[pairKey]) salesByPair[pairKey] = { revenue: 0, earned: 0 };
+      salesByPair[pairKey].revenue += amt;
+      salesByPair[pairKey].earned += comm;
+    });
+
+    // Active partner IDs sorted by commission + referral count descending
+    const activePartnerIdSet = new Set([
+      ...Object.keys(refByPartner).map(Number),
+      ...Object.keys(salesByPartner).map(Number)
+    ]);
+    const activePartnerIds = [...activePartnerIdSet].sort((a, b) => {
+      const revDiff = (salesByPartner[b]?.revenue || 0) - (salesByPartner[a]?.revenue || 0);
+      if (revDiff !== 0) return revDiff;
+      return (refByPartner[b]?.length || 0) - (refByPartner[a]?.length || 0);
+    });
+
+    // Fetch all users referenced in referrals & sales so we have complete attribution data
+    const involvedIds = [
+      ...activePartnerIds,
+      ...allReferrals.map(r => r.referred_id)
+    ];
+    const involvedUsersMap = await fetchUsersByIds(involvedIds);
+
+    const formatPersonRow = (u) => {
+      const refs = refByPartner[u.id] || [];
+      const sales = salesByPartner[u.id] || { revenue: 0, earned: 0 };
+      const tierInfo = getAffiliateTierInfo(sales.revenue);
+      const referredTraders = refs.map(r => {
+        const ru = involvedUsersMap[r.referred_id] || {};
+        const pairSales = salesByPair[`${u.id}:${r.referred_id}`] || { revenue: 0, earned: 0 };
+        return {
+          id: r.referred_id,
+          full_name: ru.full_name || `Trader #${r.referred_id}`,
+          email: ru.email || '—',
+          joined_at: r.created_at || ru.created_at,
+          purchased_usd: pairSales.revenue,
+          commission_earned: pairSales.earned
+        };
+      });
+
+      return {
+        id: u.id,
+        full_name: u.full_name || `Trader #${u.id}`,
+        email: u.email || '—',
+        created_at: u.created_at,
+        affCode: formatAffCode(u.id),
+        affLink: getAffiliateLink(u.id),
+        ...tierInfo,
+        totalReferrals: refs.length,
+        totalRevenue: sales.revenue,
+        totalEarned: sales.earned,
+        referredTraders
+      };
+    };
+
+    let partners = [];
+    let totalItems = 0;
+
+    if (search) {
+      const safeQ = search.replace(/[,()]/g, ' ').trim();
+      const parsedCodeId = parseInt(safeQ.replace(/^F4U/i, ''), 10);
+      let queryBuilder = _sb
+        .from('users')
+        .select('id, full_name, email, role, created_at', { count: 'exact' })
+        .neq('role', 'admin');
+
+      if (!isNaN(parsedCodeId) && String(parsedCodeId) === safeQ.replace(/^F4U0*/i, '') && safeQ.length > 0) {
+        queryBuilder = queryBuilder.or(`id.eq.${parsedCodeId},full_name.ilike.%${safeQ}%,email.ilike.%${safeQ}%`);
+      } else {
+        queryBuilder = queryBuilder.or(`full_name.ilike.%${safeQ}%,email.ilike.%${safeQ}%`);
+      }
+
+      const from = (page - 1) * limit;
+      const { data: matchedUsers, count: matchCount, error: matchErr } = await queryBuilder
+        .order('created_at', { ascending: false })
+        .range(from, from + limit - 1);
+      if (matchErr) throw new Error(matchErr.message);
+
+      let mapped = (matchedUsers || []).map(formatPersonRow);
+      if (filter === 'active') {
+        mapped = mapped.filter(p => p.totalReferrals > 0 || p.totalRevenue > 0);
+        totalItems = mapped.length;
+      } else {
+        totalItems = matchCount || mapped.length;
+      }
+      partners = mapped;
+    } else if (filter === 'active') {
+      totalItems = activePartnerIds.length;
+      const from = (page - 1) * limit;
+      const pageIds = activePartnerIds.slice(from, from + limit);
+      partners = pageIds.map(id => involvedUsersMap[id]).filter(Boolean).map(formatPersonRow);
+    } else {
+      // 'all' with active partners prioritized at the top
+      totalItems = totalTraders;
+      const offset = (page - 1) * limit;
+      const activeCount = activePartnerIds.filter(id => involvedUsersMap[id] && involvedUsersMap[id].role !== 'admin').length;
+
+      if (offset < activeCount) {
+        const activeSliceIds = activePartnerIds
+          .filter(id => involvedUsersMap[id] && involvedUsersMap[id].role !== 'admin')
+          .slice(offset, offset + limit);
+        const activeRows = activeSliceIds.map(id => formatPersonRow(involvedUsersMap[id]));
+        const remaining = limit - activeRows.length;
+
+        let fillerRows = [];
+        if (remaining > 0) {
+          let q = _sb.from('users').select('id, full_name, email, role, created_at').neq('role', 'admin').order('created_at', { ascending: false }).range(0, remaining + activePartnerIds.length);
+          const { data: extraUsers } = await q;
+          fillerRows = (extraUsers || [])
+            .filter(u => !activePartnerIdSet.has(u.id))
+            .slice(0, remaining)
+            .map(formatPersonRow);
+        }
+        partners = [...activeRows, ...fillerRows];
+      } else {
+        const nonActiveOffset = offset - activeCount;
+        const { data: pageUsers } = await _sb
+          .from('users')
+          .select('id, full_name, email, role, created_at')
+          .neq('role', 'admin')
+          .order('created_at', { ascending: false })
+          .range(nonActiveOffset, nonActiveOffset + limit + activePartnerIds.length);
+        partners = (pageUsers || [])
+          .filter(u => !activePartnerIdSet.has(u.id))
+          .slice(0, limit)
+          .map(formatPersonRow);
+      }
+    }
+
+    // Build recent referred trader registrations log
+    const recentReferrals = allReferrals.slice(0, 100).map(r => {
+      const refUser = involvedUsersMap[r.referred_id] || {};
+      const partnerUser = involvedUsersMap[r.referrer_id] || {};
+      const partnerSales = salesByPartner[r.referrer_id] || { revenue: 0, earned: 0 };
+      const partnerTier = getAffiliateTierInfo(partnerSales.revenue);
+      const pairSales = salesByPair[`${r.referrer_id}:${r.referred_id}`] || { revenue: 0, earned: 0 };
+
+      return {
+        referred_id: r.referred_id,
+        full_name: refUser.full_name || `Trader #${r.referred_id}`,
+        email: refUser.email || '—',
+        joined_at: r.created_at || refUser.created_at,
+        referrer_id: r.referrer_id,
+        referrer_name: partnerUser.full_name || `Trader #${r.referrer_id}`,
+        referrer_email: partnerUser.email || '—',
+        referrer_code: formatAffCode(r.referrer_id),
+        commissionRate: partnerTier.commissionRate,
+        tier: partnerTier.tier,
+        purchased_usd: pairSales.revenue,
+        commission_earned: pairSales.earned
+      };
+    });
+
+    res.json({
+      summary: {
+        totalTraders,
+        activePartnersCount: activePartnerIds.length,
+        totalReferrals: allReferrals.length,
+        totalRevenue,
+        totalCommissions
+      },
+      partners,
+      recentReferrals,
+      pagination: {
+        page,
+        limit,
+        totalItems,
+        totalPages: Math.max(1, Math.ceil(totalItems / limit))
+      }
+    });
+  } catch (err) {
+    console.error('Admin affiliates error:', err);
     res.status(500).json({ error: 'Server error' });
   }
 });

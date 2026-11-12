@@ -1119,8 +1119,24 @@
         Most prop firms only pay when a challenge is sold. Fundings4U pays affiliates at multiple stages: commissions, monthly community accounts, leaderboard prizes, and our exclusive <strong>Success Share™</strong>.
       </p>
       <div class="mt-10 flex flex-col sm:flex-row justify-center gap-4">
-        <button class="btn-primary" onclick="window.location.href='/signup'">Become a Partner</button>
+        <button class="btn-primary partner-signup-btn" onclick="goPartnerSignup()">Become a Partner</button>
         <button class="btn-outline" onclick="document.getElementById('tiers').scrollIntoView({behavior:'smooth'})">View Partner Levels</button>
+      </div>
+
+      <!-- Logged-in Trader Individual Affiliate Link Box -->
+      <div id="partnerAffBox" style="display:none;max-width:680px;margin:32px auto 0;background:rgba(17,14,36,0.85);border:1px solid rgba(124,58,237,0.35);border-radius:16px;padding:20px 24px;text-align:left;">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
+          <div>
+            <div style="font-size:11px;font-weight:700;color:#a78bfa;text-transform:uppercase;letter-spacing:.08em;">Your Individual Affiliate Link</div>
+            <div style="font-size:13px;color:#9b93ae;margin-top:2px;">Share this link — any trader who registers gets tracked in your Affiliate Dashboard.</div>
+          </div>
+          <div style="font-size:12px;font-weight:700;color:#34d399;background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.25);padding:4px 10px;border-radius:20px;" id="partnerTierBadge">10% Commission</div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+          <input type="text" id="partnerAffLinkInput" readonly style="flex:1;min-width:220px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:10px 14px;font-family:monospace;font-size:13px;color:#cebdff;outline:none;" onclick="this.select()"/>
+          <button type="button" onclick="copyPartnerAffLink()" id="partnerCopyBtn" class="btn-primary" style="padding:10px 18px;font-size:13px;">Copy Link</button>
+          <a href="/dashboard?tab=affiliate" class="btn-outline" style="padding:10px 16px;font-size:13px;text-decoration:none;">View My Traders →</a>
+        </div>
       </div>
     </div>
 
@@ -1296,7 +1312,7 @@
     <div class="text-center py-20 reveal mb-20">
       <h2 class="text-4xl font-bold font-sora mb-6 text-on-surface">Ready to build your community?</h2>
       <p class="text-on-surface-variant max-w-xl mx-auto mb-10">Sign up in seconds, grab your referral link, and start earning up to 30% commission immediately.</p>
-      <button class="btn-primary" onclick="window.location.href='/signup'" style="padding: 16px 40px; font-size: 14px;">Become a Partner Now</button>
+      <button class="btn-primary partner-signup-btn" onclick="goPartnerSignup()" style="padding: 16px 40px; font-size: 14px;">Become a Partner Now</button>
     </div>
 
   </div>
@@ -1876,15 +1892,59 @@ buildTicker();
 })();
 </script>
 
-<!-- Affiliate Tracking -->
+<!-- Affiliate Tracking & Logged-in Individual Link -->
 <script>
 (function() {
   const params = new URLSearchParams(window.location.search);
   const refCode = params.get('ref');
   if (refCode) {
-    localStorage.setItem('f4u_ref', refCode);
+    localStorage.setItem('f4u_ref', refCode.trim());
+  }
+
+  // If logged in, display individual affiliate link right on the Affiliation/Partner page
+  const token = localStorage.getItem('f4u_token');
+  const user = JSON.parse(localStorage.getItem('f4u_user') || 'null');
+  if (token && user && user.id) {
+    const code = 'F4U' + String(user.id).padStart(5, '0');
+    const link = 'https://fundings4u.com/signup?ref=' + code;
+    const box = document.getElementById('partnerAffBox');
+    const inp = document.getElementById('partnerAffLinkInput');
+    if (box && inp) {
+      inp.value = link;
+      box.style.display = 'block';
+    }
+    fetch('/api/affiliate/stats', { headers: { Authorization: 'Bearer ' + token } })
+      .then(r => r.ok ? r.json() : null)
+      .then(stats => {
+        if (!stats) return;
+        if (inp && stats.affLink) inp.value = stats.affLink;
+        const badge = document.getElementById('partnerTierBadge');
+        if (badge) badge.textContent = `${stats.tier} • ${stats.commissionRate}% Commission (${stats.totalReferrals} Referred)`;
+      }).catch(() => {});
   }
 })();
+
+function goPartnerSignup() {
+  const ref = localStorage.getItem('f4u_ref');
+  window.location.href = ref ? ('/signup?ref=' + encodeURIComponent(ref)) : '/signup';
+}
+
+function copyPartnerAffLink() {
+  const inp = document.getElementById('partnerAffLinkInput');
+  if (!inp || !inp.value) return;
+  const btn = document.getElementById('partnerCopyBtn');
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(inp.value).catch(() => {});
+  } else {
+    inp.select();
+    try { document.execCommand('copy'); } catch (e) {}
+  }
+  if (btn) {
+    const orig = btn.textContent;
+    btn.textContent = '✓ Copied!';
+    setTimeout(() => { btn.textContent = orig; }, 2000);
+  }
+}
 </script>
 
 </body>
