@@ -957,12 +957,22 @@ app.post('/api/checkout/webhook', express.json(), async (req, res) => {
     }
 
     const { order_id: rawOrderId, payment_status, payment_id } = req.body;
-    const orderId = String(rawOrderId).replace('F4U-', '');
+    const rawStr = String(rawOrderId || '');
+    const refMatch = rawStr.match(/-REF-(\d+)$/i);
+    const refSuffixId = refMatch ? parseInt(refMatch[1], 10) : null;
+    const orderId = rawStr.split('-REF-')[0].replace(/^F4U-/i, '');
 
     // Only handle confirmed/finished payments
     if (!['confirmed', 'finished'].includes(payment_status)) {
       await db.query('UPDATE orders SET nowpayments_status=$1 WHERE id=$2', [payment_status, orderId]);
       return res.json({ received: true });
+    }
+
+    // Prevent duplicate IPN processing if already paid
+    const { data: existingOrder } = await _sb.from('orders').select('id, status').eq('id', orderId).maybeSingle();
+    if (!existingOrder) return res.status(404).json({ error: 'Order not found' });
+    if (existingOrder.status === 'paid') {
+      return res.json({ received: true, already_processed: true });
     }
 
     // Mark order as paid
@@ -983,28 +993,54 @@ app.post('/api/checkout/webhook', express.json(), async (req, res) => {
       [order.user_id, sizeNum, order.plan_type, 'setup_pending']
     );
 
-    // Create welcome alert for the trader
-    await db.query(
-      'INSERT INTO alerts (user_id, title, message) VALUES ($1,$2,$3)',
-      [order.user_id,
-       '🎉 Payment Confirmed! Account Setup In Progress',
-       `Your ${order.account_size} ${order.plan_type} account has been purchased! Our team is setting up your MT5 credentials. You'll receive another notification as soon as your account is ready to trade.`]
-    );
-
-    // --- Affiliate Logic ---
+    // Create welcome alert for the trader (best-effort)
     try {
-      const { rows: refRows } = await db.query('SELECT referrer_id FROM referrals WHERE referred_id=$1', [order.user_id]);
-      if (refRows.length > 0) {
-        const referrerId = refRows[0].referrer_id;
+      await db.query(
+        'INSERT INTO alerts (user_id, trading_account_id, title, message) VALUES ($1,$2,$3,$4)',
+        [order.user_id,
+         accountRows[0].id,
+         '🎉 Payment Confirmed! Account Setup In Progress',
+         `Your ${order.account_size} ${order.plan_type} account has been purchased! Our team is setting up your MT5 credentials. You'll receive another notification as soon as your account is ready to trade.`]
+      );
+    } catch (alertErr) {
+      console.error('Welcome alert insert failed (non-fatal):', alertErr.message);
+    }
+
+    // --- Affiliate Logic (minimum 10% reward credited to partner's balance) ---
+    try {
+      const { data: refRow } = await _sb.from('referrals').select('referrer_id').eq('referred_id', order.user_id).maybeSingle();
+      let referrerId = refRow ? refRow.referrer_id : null;
+      if (!referrerId && refSuffixId && refSuffixId !== order.user_id) {
+        referrerId = refSuffixId;
+        await _sb.from('referrals').insert({ referrer_id: referrerId, referred_id: order.user_id });
+      }
+
+      if (referrerId && referrerId !== order.user_id) {
         const { rows: revRows } = await db.query('SELECT SUM(amount_usd) as total FROM affiliate_sales WHERE referrer_id=$1', [referrerId]);
         const totalRev = parseFloat(revRows[0].total) || 0;
         const tierInfo = getAffiliateTierInfo(totalRev);
-        const commRate = tierInfo.commissionRate / 100;
-        const earned = parseFloat(order.price_usd) * commRate;
-        await db.query(
-          'INSERT INTO affiliate_sales (referrer_id, referred_id, order_id, amount_usd, commission_earned) VALUES ($1,$2,$3,$4,$5)',
-          [referrerId, order.user_id, order.id, order.price_usd, earned]
-        );
+        const commRate = Math.max(0.10, tierInfo.commissionRate / 100);
+        const earned = parseFloat((parseFloat(order.price_usd) * commRate).toFixed(2));
+        await _sb.from('affiliate_sales').insert({
+          referrer_id: referrerId,
+          referred_id: order.user_id,
+          order_id: order.id,
+          amount_usd: order.price_usd,
+          commission_earned: earned
+        });
+
+        // Best-effort reward notification if partner has a trading account
+        try {
+          const { data: pAcc } = await _sb.from('trading_accounts').select('id').eq('user_id', referrerId).limit(1).maybeSingle();
+          if (pAcc) {
+            await _sb.from('alerts').insert({
+              user_id: referrerId,
+              trading_account_id: pAcc.id,
+              title: '💸 Affiliate Reward Credited!',
+              message: `A trader checked out using your affiliate discount code/link! $${earned.toFixed(2)} (${Math.round(commRate * 100)}% reward) has been credited to your Affiliate balance.`
+            });
+          }
+        } catch (e) {}
       }
     } catch(err) {
       console.error('Affiliate tracking error in webhook:', err);
@@ -1052,10 +1088,17 @@ app.get('/api/admin/orders', authMiddleware, adminOnly, async (req, res) => {
 // ── COUPON CODE SYSTEM ───────────────────────────────────────
 // ════════════════════════════════════════════════════════════
 
-// Public: validate a coupon code
+// Public: validate a coupon code OR partner affiliate discount code (10% OFF)
 app.post('/api/coupons/validate', async (req, res) => {
   const code = (req.body.code || '').toString().trim().toUpperCase();
   if (!code) return res.status(400).json({ error: 'No code provided' });
+
+  // Optional auth check to prevent using own affiliate code
+  let currentUserId = null;
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (token) currentUserId = jwt.verify(token, JWT_SECRET)?.id || null;
+  } catch (e) {}
 
   try {
     const { data: coupon, error } = await _sb
@@ -1065,22 +1108,69 @@ app.post('/api/coupons/validate', async (req, res) => {
       .maybeSingle();
 
     if (error) throw error;
-    if (!coupon) return res.status(404).json({ valid: false, error: 'Invalid coupon code' });
-    if (!coupon.is_active) return res.status(410).json({ valid: false, error: 'This coupon has been deactivated' });
-    if (coupon.expires_at && new Date(coupon.expires_at) < new Date())
-      return res.status(410).json({ valid: false, error: 'This coupon has expired' });
-    if (coupon.max_uses !== null && coupon.used_count >= coupon.max_uses)
-      return res.status(410).json({ valid: false, error: 'This coupon has reached its usage limit' });
+    if (coupon) {
+      if (!coupon.is_active) return res.status(410).json({ valid: false, error: 'This coupon has been deactivated' });
+      if (coupon.expires_at && new Date(coupon.expires_at) < new Date())
+        return res.status(410).json({ valid: false, error: 'This coupon has expired' });
+      if (coupon.max_uses !== null && coupon.used_count >= coupon.max_uses)
+        return res.status(410).json({ valid: false, error: 'This coupon has reached its usage limit' });
 
-    res.json({
-      valid: true,
-      code: coupon.code,
-      discount_percent: coupon.discount_percent,
-      description: coupon.description
-    });
+      return res.json({
+        valid: true,
+        code: coupon.code,
+        discount_percent: coupon.discount_percent,
+        description: coupon.description
+      });
+    }
+
+    // Check if code is a Partner / Affiliate Discount Code (e.g. F4U00001 -> 10% OFF)
+    if (/^F4U0*\d+$/i.test(code)) {
+      const partnerId = parseInt(code.replace(/^F4U/i, ''), 10);
+      if (!isNaN(partnerId) && partnerId > 0) {
+        if (currentUserId && currentUserId === partnerId) {
+          return res.status(400).json({ valid: false, error: 'You cannot use your own affiliate code' });
+        }
+        const { data: partnerUser } = await _sb.from('users').select('id').eq('id', partnerId).maybeSingle();
+        if (partnerUser) {
+          return res.json({
+            valid: true,
+            code: formatAffCode(partnerId),
+            discount_percent: 10,
+            description: '10% Partner Discount',
+            is_affiliate_code: true
+          });
+        }
+      }
+    }
+
+    return res.status(404).json({ valid: false, error: 'Invalid coupon code' });
   } catch (e) {
     console.error('Coupon validate error:', e);
     res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Check if logged-in buyer was referred by an affiliate link (auto-applies 10% discount at checkout)
+app.get('/api/affiliate/my-referrer', authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { data: refRow } = await _sb
+      .from('referrals')
+      .select('referrer_id')
+      .eq('referred_id', userId)
+      .maybeSingle();
+
+    if (refRow && refRow.referrer_id && refRow.referrer_id !== userId) {
+      return res.json({
+        has_referrer: true,
+        code: formatAffCode(refRow.referrer_id),
+        discount_percent: 10
+      });
+    }
+    res.json({ has_referrer: false });
+  } catch (e) {
+    console.error('my-referrer error:', e);
+    res.json({ has_referrer: false });
   }
 });
 
@@ -1107,40 +1197,91 @@ app.post('/api/admin/coupons/toggle', authMiddleware, adminOnly, async (req, res
 
 app.post('/api/payment/create-invoice', authMiddleware, async (req, res) => {
   const { plan_type, account_size, base_price, coupon_code, add_on } = req.body;
+  const userId = req.user.id;
   const addOnCost = (add_on === 'daily_payout' && plan_type === 'instant') ? 18 : 0;
   const calculatedBase = Number(base_price) + addOnCost;
   let finalPrice = calculatedBase;
-  
+  let partnerId = null;
+
   try {
-    // 1. Verify and apply coupon if provided
+    let couponApplied = false;
+
+    // 1. Verify and apply coupon OR partner discount code if provided
     if (coupon_code) {
+      const upperCode = String(coupon_code).trim().toUpperCase();
       const { data: coupon } = await _sb
         .from('coupon_codes')
         .select('discount_percent, is_active, max_uses, used_count')
-        .eq('code', coupon_code.toUpperCase())
+        .eq('code', upperCode)
         .maybeSingle();
 
       if (coupon && coupon.is_active && (coupon.max_uses === null || coupon.used_count < coupon.max_uses)) {
         const saving = Math.round(calculatedBase * coupon.discount_percent / 100);
         finalPrice = calculatedBase - saving;
+        couponApplied = true;
+      } else if (/^F4U0*\d+$/i.test(upperCode)) {
+        const parsedId = parseInt(upperCode.replace(/^F4U/i, ''), 10);
+        if (!isNaN(parsedId) && parsedId > 0 && parsedId !== userId) {
+          const { data: partnerUser } = await _sb.from('users').select('id').eq('id', parsedId).maybeSingle();
+          if (partnerUser) {
+            partnerId = parsedId;
+            const saving = Math.round(calculatedBase * 10 / 100);
+            finalPrice = calculatedBase - saving;
+            couponApplied = true;
+
+            // Ensure referral is recorded if this buyer hasn't been attributed yet
+            const { data: existingRef } = await _sb.from('referrals').select('id').eq('referred_id', userId).maybeSingle();
+            if (!existingRef) {
+              await _sb.from('referrals').insert({ referrer_id: partnerId, referred_id: userId });
+            }
+          }
+        }
       }
     }
 
-    // 2. Call NOWPayments API via built-in https to avoid Node version issues
+    // Also check if buyer was already referred by a partner link (auto 10% discount + attribution)
+    const { data: refRow } = await _sb.from('referrals').select('referrer_id').eq('referred_id', userId).maybeSingle();
+    if (refRow && refRow.referrer_id && refRow.referrer_id !== userId) {
+      if (!partnerId) partnerId = refRow.referrer_id;
+      if (!couponApplied) {
+        const saving = Math.round(calculatedBase * 10 / 100);
+        finalPrice = calculatedBase - saving;
+      }
+    }
+
+    // 2. Create pending order record in DB so webhook can track & credit 10% affiliate reward
+    const { data: orderRow, error: orderErr } = await _sb
+      .from('orders')
+      .insert({
+        user_id: userId,
+        plan_type,
+        account_size,
+        price_usd: finalPrice,
+        status: 'pending'
+      })
+      .select('id')
+      .single();
+    if (orderErr) throw new Error(orderErr.message);
+    const orderId = orderRow.id;
+
+    // 3. Call NOWPayments API via built-in https to avoid Node version issues
     const npApiKey = process.env.NOWPAYMENTS_API_KEY || '0F3CR9A-TDDM3EC-NQGR7W6-EMYSJ78';
-    
+    const appBaseUrl = process.env.APP_URL || 'https://fundings4u.com';
     const https = require('https');
     const orderDesc = addOnCost > 0
       ? `${plan_type} - ${account_size} (+Daily Payout Add-on)`
       : `${plan_type} - ${account_size}`;
 
+    const npOrderId = partnerId ? `F4U-${orderId}-REF-${partnerId}` : `F4U-${orderId}`;
+
     const postData = JSON.stringify({
       price_amount: finalPrice,
       price_currency: 'usd',
-      order_id: `ORD-${Date.now()}-${req.user.userId}`,
+      ipn_callback_url: `${appBaseUrl}/api/checkout/webhook`,
+      order_id: npOrderId,
       order_description: orderDesc,
-      success_url: 'https://fundings4u.com/checkout/success',
-      cancel_url: 'https://fundings4u.com/checkout'
+      success_url: `${appBaseUrl}/checkout/success?order=${orderId}`,
+      cancel_url: `${appBaseUrl}/checkout`
     });
 
     const options = {
@@ -1176,7 +1317,11 @@ app.post('/api/payment/create-invoice', authMiddleware, async (req, res) => {
       return res.status(400).json({ error: data.data.message || 'Failed to create invoice' });
     }
 
-    res.json({ invoice_url: data.data.invoice_url });
+    if (data.data && data.data.id) {
+      await _sb.from('orders').update({ nowpayments_id: String(data.data.id) }).eq('id', orderId);
+    }
+
+    res.json({ invoice_url: data.data.invoice_url, order_id: orderId });
   } catch (error) {
     console.error('Payment API error:', error);
     res.status(500).json({ error: 'Internal Server Error' });

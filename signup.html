@@ -108,11 +108,6 @@ html,body{min-height:100%;background:#050510;font-family:'Inter',sans-serif;colo
       <div style="font-size:11px;color:#6b5c8a;margin-top:2px;">Create your account to proceed to payment.</div>
     </div>
 
-    <!-- Referral Banner (shown if user came via affiliate link) -->
-    <div id="refBanner" style="display:none;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.25);border-radius:12px;padding:10px 14px;margin-bottom:20px;align-items:center;justify-content:space-between;gap:8px;">
-      <div style="font-size:12px;color:#6ee7b7;font-weight:600;">🤝 Partner Referral Applied: <span id="refBannerCode" style="font-family:monospace;color:#fff;background:rgba(16,185,129,0.18);padding:2px 8px;border-radius:6px;margin-left:4px;"></span></div>
-    </div>
-
     <!-- Step Indicator -->
     <div class="steps">
       <div class="step-dot active" id="dot1">1</div>
@@ -182,7 +177,7 @@ html,body{min-height:100%;background:#050510;font-family:'Inter',sans-serif;colo
 <script>
 let step1Data = {};
 
-// Capture & persist affiliate referral code from URL or localStorage
+// Capture & persist affiliate referral code silently from URL or localStorage
 function getActiveRefCode() {
   const params = new URLSearchParams(window.location.search);
   const urlRef = (params.get('ref') || params.get('ref_code') || params.get('referral') || '').trim();
@@ -192,14 +187,7 @@ function getActiveRefCode() {
   }
   return (localStorage.getItem('f4u_ref') || '').trim();
 }
-
-(function() {
-  const activeRef = getActiveRefCode();
-  if (activeRef) {
-    document.getElementById('refBannerCode').textContent = activeRef.toUpperCase();
-    document.getElementById('refBanner').style.display = 'flex';
-  }
-})();
+getActiveRefCode();
 
 // Show plan banner if user came from pricing page
 (function() {

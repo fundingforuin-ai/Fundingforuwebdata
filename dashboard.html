@@ -480,6 +480,7 @@ input:-webkit-autofill:active{
           <div>
             <div class="text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant mb-1">Fundings4U Affiliate Ecosystem</div>
             <div class="text-2xl font-bold font-sora text-on-surface flex items-center gap-2">Elite Partner Program</div>
+            <div class="text-xs text-on-surface-variant mt-1">Share your link or discount code (<span class="text-green-400 font-semibold">10% OFF</span> for buyers) — earn <span class="text-primary font-semibold">10%+ reward</span> credited to your balance on every checkout!</div>
           </div>
           <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
             <div class="bg-surface-container-lowest border border-outline-variant/30 rounded-lg px-3 py-2 flex items-center gap-2 min-w-0">
@@ -487,7 +488,8 @@ input:-webkit-autofill:active{
               <input type="text" id="affLinkInput" readonly value="https://fundings4u.com/signup?ref=..." class="bg-transparent text-xs font-mono text-primary outline-none w-full sm:w-72 truncate cursor-pointer" onclick="this.select();copyAffLink()"/>
             </div>
             <button type="button" class="bg-primary text-surface font-bold px-4 py-2 rounded-lg text-xs hover:opacity-90 transition-opacity shrink-0 cursor-pointer" onclick="copyAffLink()">Copy Link</button>
-            <button type="button" class="bg-primary/10 border border-primary/20 text-primary px-3 py-2 rounded-lg text-xs font-mono font-semibold hover:bg-primary/20 transition-colors shrink-0 cursor-pointer flex items-center justify-center gap-1.5" onclick="copyAffCode()" title="Copy Affiliate Code">
+            <button type="button" class="bg-primary/10 border border-primary/20 text-primary px-3 py-2 rounded-lg text-xs font-mono font-semibold hover:bg-primary/20 transition-colors shrink-0 cursor-pointer flex items-center justify-center gap-1.5" onclick="copyAffCode()" title="Copy 10% Discount Code">
+              <span class="text-[10px] text-green-400 font-sans font-bold uppercase">10% Code:</span>
               <span id="affCodeDisplay">Loading...</span>
               <span class="material-symbols-outlined" style="font-size:14px">content_copy</span>
             </button>

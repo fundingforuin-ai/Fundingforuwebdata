@@ -402,7 +402,7 @@ let addonActive = false;
 const ADDON_DAILY_PAYOUT_PRICE = 18;
 
 // ── Load plan ───────────────────────────────────────────────
-function loadPlan() {
+async function loadPlan() {
   const raw = localStorage.getItem('f4u_pending_plan');
   if (!raw) {
     document.getElementById('mainGrid').style.display = 'none';
@@ -439,6 +439,26 @@ function loadPlan() {
   if (currentPlan) {
     basePriceUsd = parseFloat(currentPlan.price_usd);
   }
+
+  // Auto-apply 10% partner discount if buyer registered via affiliate link (or has f4u_ref)
+  try {
+    const refRes = await fetch('/api/affiliate/my-referrer', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if (refRes.ok) {
+      const refData = await refRes.json();
+      if (refData && refData.has_referrer && refData.code) {
+        activeCoupon = { code: refData.code, discount_percent: refData.discount_percent || 10 };
+        const inp = document.getElementById('couponInput');
+        const btn = document.getElementById('couponBtn');
+        const fb  = document.getElementById('couponFeedback');
+        if (inp) { inp.value = refData.code; inp.classList.add('success'); }
+        if (btn) { btn.disabled = true; btn.textContent = 'Applied ✓'; }
+        if (fb)  { fb.className = 'coupon-feedback success'; fb.innerHTML = '✓ 10% Partner discount applied!'; }
+        applyDiscount(false);
+      }
+    }
+  } catch (e) {}
 
   updateSummaryAndPrices();
 
@@ -652,7 +672,10 @@ async function applyCoupon() {
   try {
     const res  = await fetch('/api/coupons/validate', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + token
+      },
       body: JSON.stringify({ code })
     });
     const data = await res.json();
@@ -675,7 +698,7 @@ async function applyCoupon() {
     fb.innerHTML = '✓ Code accepted!';
     btn.textContent = 'Applied ✓';
 
-    applyDiscount();
+    applyDiscount(true);
 
   } catch(e) {
     fb.className = 'coupon-feedback error';
@@ -685,7 +708,7 @@ async function applyCoupon() {
   }
 }
 
-function applyDiscount() {
+function applyDiscount(reloadWidget = true) {
   if (!activeCoupon || !basePriceUsd) return;
 
   // Show discount banner
@@ -696,7 +719,7 @@ function applyDiscount() {
   updateSummaryAndPrices();
   
   // Reload the payment widget with the new price
-  loadPaymentWidget();
+  if (reloadWidget) loadPaymentWidget();
 }
 
 function removeCoupon() {
